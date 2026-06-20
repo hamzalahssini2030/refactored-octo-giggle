@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Prompt Engineer · Loria Space</title>
+<meta name="description" content="Prompt Engineer — a smart interactive interface for writing AI prompts and exporting them as documents. Multilingual." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;700;800&family=Noto+Sans+SC:wght@400;500;700;800&family=Tajawal:wght@400;500;700;800&family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.min.js"></script>
+<style>
+  /* ============ TOKENS ============ */
+  :root{
+    --cyan:#22d3ee;--violet:#8b5cf6;--magenta:#f472b6;--teal:#2dd4bf;--amber:#fbbf24;
+    --neon:linear-gradient(120deg,var(--cyan),var(--violet) 55%,var(--magenta));
+    --btn-grad:linear-gradient(120deg,#0e7490,#7c3aed 52%,#be185d);--btn-ink:#ffffff;--btn-sh:0 1px 2px rgba(6,10,30,.4);
+    --glass-border:linear-gradient(135deg,var(--cyan),var(--violet) 55%,var(--magenta));
+    --r:20px;--r-sm:13px;
+    --f-body:"Tajawal",system-ui,-apple-system,"Segoe UI",sans-serif;
+    --f-disp:"Orbitron",sans-serif;--f-lat:"Rajdhani",sans-serif;--f-mono:"Share Tech Mono",ui-monospace,monospace;
+    /* dark (default) */
+    --bg:#05060f;--bg2:#090b1d;
+    --panel:rgba(16,21,46,.55);--panel-2:rgba(20,26,54,.72);
+    --text:#e9edff;--muted:#97a3d6;--muted-2:#6f7bb0;
+    --line:rgba(120,150,255,.18);--line-2:rgba(120,150,255,.30);
+    --field:rgba(255,255,255,.04);--field-2:rgba(255,255,255,.035);
+    --term-bg:rgba(4,7,18,.7);--term-text:#bfe7f3;
+    --shadow:0 30px 80px -34px rgba(0,0,0,.9), 0 0 0 1px rgba(120,150,255,.06) inset;
+    --glow:0 0 24px -4px;
+    --aurora-blend:screen;--aurora-op:.5;--grid-c1:rgba(34,211,238,.16);--grid-c2:rgba(139,92,246,.16);--dust-c:#cfe3ff;
+  }
+  body.theme-light{
+    --bg:#eaeefb;--bg2:#e2e7f6;
+    --panel:rgba(255,255,255,.74);--panel-2:rgba(255,255,255,.88);
+    --text:#1b2147;--muted:#5a6291;--muted-2:#9aa1c6;
+    --line:rgba(90,100,170,.18);--line-2:rgba(90,100,170,.32);
+    --field:rgba(255,255,255,.7);--field-2:rgba(255,255,255,.55);
+    --term-bg:#ffffff;--term-text:#33406b;
+    --shadow:0 26px 64px -32px rgba(60,70,150,.42), 0 0 0 1px rgba(120,130,200,.08) inset;
+    --aurora-blend:normal;--aurora-op:.22;--grid-c1:rgba(99,102,241,.12);--grid-c2:rgba(168,85,247,.10);--dust-c:#8b7bff;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:var(--f-body);color:var(--text);line-height:1.7;min-height:100vh;overflow-x:hidden;background-attachment:fixed;
+    background:
+      radial-gradient(1200px 800px at 80% -10%, rgba(139,92,246,.22), transparent 60%),
+      radial-gradient(1000px 700px at 5% 5%, rgba(34,211,238,.16), transparent 58%),
+      radial-gradient(900px 900px at 50% 120%, rgba(244,114,182,.16), transparent 60%),
+      linear-gradient(180deg,var(--bg),var(--bg2));
+    transition:background .5s ease,color .4s ease;
+  }
+  body.lang-zh{--f-body:"Noto Sans SC",system-ui,-apple-system,"Segoe UI",sans-serif}
+  body.lang-hi{--f-body:"Noto Sans Devanagari",system-ui,-apple-system,"Segoe UI",sans-serif}
+  body.lang-en{--f-body:system-ui,-apple-system,"Segoe UI",sans-serif}
+  body.theme-light{
+    background:
+      radial-gradient(1200px 820px at 82% -12%, rgba(139,92,246,.18), transparent 60%),
+      radial-gradient(1000px 720px at 4% 4%, rgba(34,211,238,.16), transparent 58%),
+      radial-gradient(900px 900px at 50% 122%, rgba(244,114,182,.16), transparent 60%),
+      linear-gradient(180deg,var(--bg),var(--bg2));
+    background-attachment:fixed;
+  }
+  /* light-mode contrast fixes (deeper accents on bright bg) */
+  body.theme-light .eyebrow,
+  body.theme-light .creed .lab,
+  body.theme-light .chip .tick{color:#0e7490}
+  body.theme-light .mpct,
+  body.theme-light .stepbtn .num{color:#7c3aed}
+  body.theme-light .brand-name{background:linear-gradient(120deg,#0891b2,#7c3aed 55%,#db2777);-webkit-background-clip:text;background-clip:text}
+  body.theme-light .addbtn{border-color:#7c3aed;color:#7c3aed;background:rgba(124,58,237,.07)}
+  body.theme-light .corner{border-color:#7c3aed;filter:none;opacity:.5}
+  body.theme-light .info{color:#b45309;border-color:#d97706;background:rgba(217,119,6,.1)}
+  body.theme-light .info:hover,body.theme-light .info.on{color:#fff;background:#d97706}
+  body.theme-light #pop .pop-h{color:#b45309}
+  body.theme-light #pop .pop-h .ic{background:#d97706}
+  body.theme-light .note{color:#2a2550}
+  body.theme-light .term textarea{color:#33406b}
+
+  /* ============ AMBIENT ============ */
+  .layer{position:fixed;inset:0;pointer-events:none;overflow:hidden}
+  .l-aurora{z-index:0}.l-grid{z-index:0}.l-dust{z-index:1}
+  .aurora{position:absolute;border-radius:50%;filter:blur(70px);opacity:var(--aurora-op);mix-blend-mode:var(--aurora-blend);animation:floaty 24s ease-in-out infinite}
+  @keyframes floaty{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(30px,-28px) scale(1.12)}}
+  .grid-floor{position:absolute;left:-25%;right:-25%;bottom:-2%;height:62vh;perspective:300px;perspective-origin:50% 0}
+  .grid-floor::before{content:"";position:absolute;inset:0;background-image:linear-gradient(var(--grid-c1) 1px,transparent 1px),linear-gradient(90deg,var(--grid-c2) 1px,transparent 1px);background-size:46px 46px;transform:rotateX(74deg);transform-origin:50% 0;animation:grid 14s linear infinite}
+  @keyframes grid{to{background-position:0 46px,0 0}}
+  .grid-mask{position:absolute;inset:0;background:linear-gradient(180deg,var(--bg) 4%,transparent 46%)}
+  .dust{position:absolute;border-radius:50%;background:var(--dust-c);opacity:0;animation:rise2 linear infinite}
+  @keyframes rise2{0%{transform:translateY(0);opacity:0}10%{opacity:.7}90%{opacity:.5}100%{transform:translateY(-108vh);opacity:0}}
+
+  /* ============ LAYOUT ============ */
+  .wrap{position:relative;z-index:3;max-width:1060px;margin:0 auto;padding:24px 18px 72px}
+  .stage{position:relative}
+  .corner{position:absolute;width:26px;height:26px;border:2px solid var(--cyan);opacity:.6;z-index:5;filter:drop-shadow(0 0 6px var(--cyan))}
+  .corner.tl{inset-block-start:-10px;inset-inline-start:-10px;border-inline-end:0;border-block-end:0}
+  .corner.tr{inset-block-start:-10px;inset-inline-end:-10px;border-inline-start:0;border-block-end:0}
+  .corner.bl{inset-block-end:-10px;inset-inline-start:-10px;border-inline-end:0;border-block-start:0}
+  .corner.br{inset-block-end:-10px;inset-inline-end:-10px;border-inline-start:0;border-block-start:0}
+
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+  .brand{display:flex;align-items:center;gap:14px;min-width:0}
+  .mark{width:56px;height:56px;flex:none;filter:drop-shadow(0 0 12px rgba(139,92,246,.7))}
+  .brand-name{font-family:var(--f-disp);font-weight:900;font-size:clamp(1.25rem,3.6vw,2rem);letter-spacing:1px;margin:0;line-height:1;background:var(--neon);-webkit-background-clip:text;background-clip:text;color:transparent}
+  body.lang-ar .brand-name{font-family:var(--f-body);font-weight:800;letter-spacing:0}
+  .brand-tag{margin:.3rem 0 0;font-family:var(--f-mono);font-size:.72rem;letter-spacing:.5px;color:var(--muted);text-transform:uppercase}
+  body.lang-ar .brand-tag{font-family:var(--f-body);text-transform:none;letter-spacing:0;font-size:.82rem}
+  .controls{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .pillgrp{display:inline-flex;align-items:center;gap:3px;background:var(--panel-2);border:1px solid var(--line);border-radius:999px;padding:4px;backdrop-filter:blur(10px)}
+  .pillgrp button{border:0;background:transparent;cursor:pointer;color:var(--muted);font-family:var(--f-lat);font-weight:700;font-size:.95rem;letter-spacing:.5px;padding:7px 16px;border-radius:999px;transition:.25s}
+  body.lang-ar .pillgrp button{font-family:var(--f-body)}
+  .pillgrp button.on{color:var(--btn-ink);background:var(--btn-grad);text-shadow:var(--btn-sh);box-shadow:var(--glow) rgba(124,58,237,.45)}
+  .pillgrp button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+  .iconpill{width:42px;height:42px;display:grid;place-items:center;border-radius:50%;border:1px solid var(--line);background:var(--panel-2);cursor:pointer;color:var(--text);transition:.25s;backdrop-filter:blur(10px)}
+  .iconpill:hover{border-color:var(--line-2);box-shadow:var(--glow) rgba(251,191,36,.4);transform:translateY(-2px)}
+  .iconpill:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+  .iconpill svg{width:20px;height:20px}
+  .iconpill.danger:hover{border-color:#f43f5e;color:#fb7185;box-shadow:var(--glow) rgba(244,63,94,.45)}
+  .iconpill.danger:focus-visible{outline-color:#fb7185}
+
+  .steps{display:flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:6px;margin-bottom:22px;backdrop-filter:blur(10px);box-shadow:var(--shadow)}
+  .stepbtn{flex:1;display:flex;align-items:center;justify-content:center;gap:9px;border:0;background:transparent;cursor:pointer;color:var(--muted);font-family:var(--f-body);font-weight:700;font-size:.95rem;padding:9px 6px;border-radius:999px;transition:.3s;white-space:nowrap}
+  .stepbtn .num{width:25px;height:25px;flex:none;display:grid;place-items:center;border-radius:50%;background:rgba(127,140,200,.14);color:var(--cyan);font-family:var(--f-disp);font-size:.72rem;font-weight:700;border:1px solid var(--line-2);transition:.3s}
+  .stepbtn.active{color:var(--text);background:rgba(127,140,200,.12)}
+  .stepbtn.active .num{background:var(--btn-grad);color:var(--btn-ink);border-color:transparent;box-shadow:var(--glow) rgba(124,58,237,.6)}
+  .stepbtn.done .num{background:var(--teal);color:#03241f;border-color:transparent}
+  .stepbtn:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+  @media (max-width:620px){.stepbtn .lbl{display:none}.stepbtn{flex:none;width:46px}}
+
+  .glass{position:relative;background:var(--panel);border-radius:var(--r);box-shadow:var(--shadow);backdrop-filter:blur(16px);padding:clamp(18px,3.2vw,32px)}
+  .glass::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1.4px;background:var(--glass-border);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:.55;pointer-events:none}
+  .step{display:none;animation:rise .55s cubic-bezier(.22,1,.36,1)}
+  .step.show{display:block}
+  @keyframes rise{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+  .eyebrow{font-family:var(--f-mono);font-size:.72rem;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;margin:0 0 6px}
+  h2.title{font-family:var(--f-body);font-weight:800;font-size:clamp(1.35rem,3.3vw,1.95rem);margin:0;color:var(--text)}
+  .sub{margin:.35rem 0 0;color:var(--muted);font-size:.97rem;font-weight:500}
+  .titlerow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:space-between}
+  .titlerow .lft{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+
+  /* ============ CHOICES ============ */
+  .choices{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:11px;margin-top:20px}
+  .chip{position:relative;display:flex;align-items:center;gap:11px;text-align:start;border:1px solid var(--line);background:var(--field-2);border-radius:var(--r-sm);padding:12px 13px;cursor:pointer;font-family:var(--f-body);font-weight:600;font-size:.95rem;color:var(--text);transition:transform .22s cubic-bezier(.22,1,.36,1),box-shadow .25s,border-color .25s,background .25s;overflow:hidden}
+  .chip .emo{width:36px;height:36px;flex:none;display:grid;place-items:center;font-size:1.2rem;background:rgba(34,211,238,.1);border:1px solid var(--line);border-radius:10px;transition:.3s}
+  .chip .tick{position:absolute;inset-inline-end:9px;inset-block-start:9px;opacity:0;transform:scale(.4);transition:.3s;color:var(--cyan)}
+  .chip:hover{transform:translateY(-3px);box-shadow:var(--glow) rgba(34,211,238,.25);border-color:var(--line-2)}
+  .chip:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+  .chip[aria-pressed="true"]{border-color:transparent;background:linear-gradient(120deg,rgba(34,211,238,.16),rgba(139,92,246,.16),rgba(244,114,182,.16));box-shadow:var(--glow) rgba(139,92,246,.45)}
+  .chip[aria-pressed="true"]::after{content:"";position:absolute;inset:0;border-radius:inherit;padding:1.4px;background:var(--glass-border);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+  .chip[aria-pressed="true"] .emo{background:rgba(34,211,238,.22)}
+  .chip[aria-pressed="true"] .tick{opacity:1;transform:none;animation:pop .4s ease}
+  @keyframes pop{0%{transform:scale(.3)}60%{transform:scale(1.25)}100%{transform:scale(1)}}
+
+  /* ============ INFO ============ */
+  .info{width:23px;height:23px;flex:none;display:inline-grid;place-items:center;border-radius:50%;cursor:pointer;border:1px solid var(--amber);background:rgba(251,191,36,.12);color:var(--amber);font-family:var(--f-disp);font-weight:900;font-size:.8rem;line-height:1;transition:.2s;padding:0}
+  .info:hover{background:var(--amber);color:#1a1300;box-shadow:var(--glow) rgba(251,191,36,.6);transform:scale(1.12)}
+  .info:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+  .info.on{background:var(--amber);color:#1a1300}
+  #pop{position:fixed;z-index:80;max-width:330px;background:var(--panel-2);border-radius:14px;padding:14px 16px;color:var(--text);font-size:.92rem;line-height:1.65;box-shadow:0 24px 60px -18px rgba(0,0,0,.6);opacity:0;transform:translateY(8px) scale(.97);pointer-events:none;transition:.18s;border:1px solid transparent;backdrop-filter:blur(16px)}
+  #pop.show{opacity:1;transform:none;pointer-events:auto}
+  #pop::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1.4px;background:linear-gradient(135deg,var(--amber),var(--magenta));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+  #pop .pop-h{display:flex;align-items:center;gap:7px;font-weight:800;color:var(--amber);margin:0 0 5px;font-size:.9rem}
+  #pop .pop-h .ic{width:18px;height:18px;display:grid;place-items:center;border-radius:50%;background:var(--amber);color:#1a1300;font-size:.7rem;font-family:var(--f-disp);font-weight:900}
+
+  /* ============ METER ============ */
+  .meter{margin:16px 0 4px;background:var(--field-2);border:1px solid var(--line);border-radius:var(--r-sm);padding:12px 15px}
+  .meter-top{display:flex;align-items:center;justify-content:space-between;font-weight:700;font-size:.9rem;color:var(--text)}
+  .meter-top .lbl2{display:flex;align-items:center;gap:7px}
+  .mpct{font-family:var(--f-disp);font-weight:700;color:var(--cyan)}
+  .mtrack{height:9px;border-radius:999px;background:rgba(127,140,200,.18);overflow:hidden;margin:9px 0 7px}
+  .mfill{height:100%;width:0;border-radius:999px;background:var(--neon);background-size:200% 100%;transition:width .5s cubic-bezier(.22,1,.36,1);animation:hue 7s ease infinite}
+  .mtip{font-size:.84rem;color:var(--muted);font-weight:500}
+
+  /* ============ FORM ============ */
+  .note{display:flex;align-items:center;gap:11px;background:linear-gradient(120deg,rgba(34,211,238,.1),rgba(139,92,246,.1));border:1px solid var(--line-2);border-radius:var(--r-sm);padding:11px 15px;margin-bottom:6px;color:var(--text);font-weight:600;font-size:.93rem}
+  .note .b{font-size:1.1rem}
+  .creed{position:relative;border-radius:var(--r-sm);padding:13px 17px;margin:16px 0 22px;background:rgba(139,92,246,.08);color:var(--text);font-weight:500;font-size:.95rem;border:1px dashed var(--violet)}
+  .creed .lab{font-family:var(--f-mono);font-size:.68rem;letter-spacing:1.5px;color:var(--cyan);text-transform:uppercase;display:block;margin-bottom:5px}
+  body.lang-ar .creed .lab{font-family:var(--f-body);letter-spacing:0}
+  .rows{display:flex;flex-direction:column;gap:12px}
+  .row{display:grid;grid-template-columns:210px 1fr;gap:16px;align-items:start;background:var(--field-2);border:1px solid var(--line);border-radius:var(--r-sm);padding:13px 15px;transition:border-color .25s,box-shadow .25s}
+  .row:focus-within{border-color:var(--line-2);box-shadow:var(--glow) rgba(34,211,238,.18)}
+  .stage-l{display:flex;align-items:center;gap:8px;padding-top:8px;flex-wrap:wrap}
+  .stage-l .dot{width:8px;height:8px;flex:none;border-radius:50%;background:var(--neon);box-shadow:var(--glow) rgba(244,114,182,.6)}
+  .stage-l .nm{font-weight:800;color:var(--text);font-size:.98rem}
+  .opt{font-size:.7rem;color:var(--muted-2);font-weight:600;border:1px solid var(--line);border-radius:999px;padding:1px 8px}
+  .ctrl{min-width:0}
+  input[type=text],textarea{width:100%;font-family:var(--f-body);font-size:.97rem;color:var(--text);background:var(--field);border:1px solid var(--line);border-radius:11px;padding:11px 13px;transition:.2s}
+  textarea{resize:vertical;min-height:70px;line-height:1.65}
+  input::placeholder,textarea::placeholder{color:var(--muted-2)}
+  input:focus,textarea:focus{outline:0;border-color:var(--cyan);background:rgba(34,211,238,.06);box-shadow:var(--glow) rgba(34,211,238,.3)}
+  .subgroup{display:flex;flex-direction:column;gap:10px}
+  .subfield .slab{display:flex;align-items:center;gap:7px;font-weight:700;font-size:.85rem;color:var(--muted);margin:0 0 5px}
+  .list{display:flex;flex-direction:column;gap:9px}
+  .list .item{display:flex;gap:8px;align-items:center;animation:rise .3s ease}
+  .iconbtn{width:40px;height:40px;flex:none;border:0;cursor:pointer;border-radius:11px;display:grid;place-items:center;font-size:1.3rem;line-height:1;transition:transform .18s,filter .2s;color:#fff}
+  .iconbtn.minus{background:linear-gradient(135deg,#fb7185,#f43f5e);box-shadow:var(--glow) rgba(244,63,94,.5)}
+  .iconbtn:hover{transform:translateY(-2px) scale(1.05);filter:saturate(1.15)}
+  .iconbtn:active{transform:scale(.92)}
+  .iconbtn:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+  .addbtn{align-self:flex-start;display:inline-flex;align-items:center;gap:8px;border:1px dashed var(--cyan);background:rgba(34,211,238,.06);cursor:pointer;color:var(--cyan);font-family:var(--f-body);font-weight:700;font-size:.9rem;padding:9px 15px;border-radius:11px;transition:.22s}
+  .addbtn .p{width:22px;height:22px;display:grid;place-items:center;border-radius:7px;background:var(--btn-grad);color:var(--btn-ink);font-size:1.05rem;line-height:1}
+  .addbtn:hover{background:rgba(34,211,238,.13);transform:translateY(-2px)}
+  .addbtn:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+  .seg{display:inline-flex;background:var(--field);border:1px solid var(--line);border-radius:12px;padding:4px;gap:4px}
+  .seg button{border:0;background:transparent;cursor:pointer;color:var(--muted);font-family:var(--f-body);font-weight:700;font-size:.93rem;padding:8px 22px;border-radius:9px;transition:.22s}
+  .seg button[aria-pressed="true"]{color:var(--btn-ink);background:var(--btn-grad);text-shadow:var(--btn-sh);box-shadow:var(--glow) rgba(124,58,237,.45)}
+  .seg button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+  .tonewrap{display:flex;flex-wrap:wrap;gap:8px}
+  .pill{border:1px solid var(--line);background:var(--field-2);cursor:pointer;color:var(--text);font-family:var(--f-body);font-weight:600;font-size:.9rem;padding:7px 14px;border-radius:999px;transition:.2s}
+  .pill:hover{border-color:var(--line-2);transform:translateY(-2px)}
+  .pill[aria-pressed="true"]{border-color:transparent;background:var(--btn-grad);color:var(--btn-ink);text-shadow:var(--btn-sh);box-shadow:var(--glow) rgba(124,58,237,.45)}
+  .pill:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+
+  /* ============ BUTTONS ============ */
+  .actions{display:flex;gap:11px;flex-wrap:wrap;margin-top:24px;align-items:center}
+  .btn{position:relative;border:0;cursor:pointer;overflow:hidden;font-family:var(--f-body);font-weight:800;font-size:1rem;color:var(--btn-ink);text-shadow:var(--btn-sh);padding:13px 26px;border-radius:13px;background:var(--btn-grad);background-size:200% 200%;box-shadow:var(--glow) rgba(124,58,237,.5);transition:transform .22s cubic-bezier(.22,1,.36,1),box-shadow .25s;display:inline-flex;align-items:center;gap:9px;animation:hue 9s ease infinite}
+  .btn>*{position:relative;z-index:1}
+  @keyframes hue{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+  .btn::before{content:"";position:absolute;inset:0;z-index:0;background:linear-gradient(110deg,transparent 20%,rgba(255,255,255,.5) 50%,transparent 80%);transform:translateX(-130%)}
+  .btn:hover{transform:translateY(-3px);box-shadow:var(--glow) rgba(34,211,238,.55)}
+  .btn:hover::before{animation:shine 1s ease}
+  @keyframes shine{to{transform:translateX(130%)}}
+  .btn:active{transform:translateY(-1px) scale(.99)}
+  .btn:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+  .btn.ghost{background:var(--field);color:var(--text);text-shadow:none;box-shadow:none;border:1px solid var(--line-2);animation:none}
+  .btn.ghost:hover{background:rgba(127,140,200,.12)}
+  .btn.small{padding:9px 16px;font-size:.9rem;font-weight:700}
+  .btn.pdf{background:linear-gradient(120deg,#fb7185,#fbbf24);color:#3a1500;text-shadow:none}
+  .btn.docx{background:linear-gradient(120deg,#2563eb,#7c3aed);color:#fff;text-shadow:var(--btn-sh)}
+  .btn[disabled]{opacity:.6;cursor:wait;transform:none}
+  .spacer{flex:1}
+  @media (max-width:620px){.btn:not(.small){flex:1;justify-content:center}.spacer{display:none}}
+  .spark{position:absolute;width:7px;height:7px;border-radius:50%;pointer-events:none}
+
+  /* ============ TERMINAL ============ */
+  .term{position:relative;border-radius:var(--r);background:var(--term-bg);border:1px solid var(--line);overflow:hidden}
+  .term-bar{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line);background:rgba(127,140,200,.07);font-family:var(--f-mono);font-size:.72rem;letter-spacing:1px;color:var(--muted);text-transform:uppercase}
+  body.lang-ar .term-bar{font-family:var(--f-body);letter-spacing:0;text-transform:none}
+  .term-bar .led{width:9px;height:9px;border-radius:50%}
+  .term textarea{width:100%;min-height:300px;border:0;background:transparent;resize:vertical;font-family:var(--f-mono),"Tajawal";font-size:.9rem;line-height:1.9;color:var(--term-text);padding:14px 16px;white-space:pre-wrap}
+  .term textarea:focus{outline:0}
+  body.lang-ar .term textarea{font-family:"Tajawal",monospace;font-size:.96rem}
+
+  .toast{position:fixed;inset-inline:0;bottom:24px;margin:auto;width:max-content;max-width:90vw;background:var(--panel-2);color:var(--text);padding:12px 22px;border-radius:999px;font-weight:700;box-shadow:0 20px 50px -18px rgba(0,0,0,.5);opacity:0;transform:translateY(18px);transition:.35s;z-index:90;border:1px solid var(--line-2);backdrop-filter:blur(12px)}
+  .toast.show{opacity:1;transform:none}
+  footer{text-align:center;margin-top:30px;color:var(--muted-2);font-size:.82rem;font-family:var(--f-mono);letter-spacing:1px}
+  body.lang-ar footer{font-family:var(--f-body);letter-spacing:0;font-size:.86rem}
+  footer b{color:var(--violet)}
+
+  /* ============ PDF STAGE (light, print-grade — standard CSS only) ============ */
+  .pdf-host{position:absolute;left:0;top:-10000px;width:794px}
+  .pdfdoc{width:794px;direction:ltr;background:#ffffff;color:#1c2140;font-family:"Tajawal",sans-serif;padding:0 0 30px}
+  .pdfdoc *{box-sizing:border-box;overflow-wrap:anywhere;word-break:break-word}
+  .pdfdoc .pre{white-space:pre-wrap;overflow-wrap:anywhere;font-family:"Tajawal",monospace;background:#f6f4ff;border-radius:8px;padding:8px 11px;margin-top:4px;font-size:.85rem;line-height:1.6}
+  .pdfdoc .pcover{background:linear-gradient(120deg,#22d3ee,#8b5cf6 55%,#f472b6);padding:30px 40px 24px;color:#fff}
+  .pdfdoc .pcover .ktag{font-size:.72rem;letter-spacing:3px;text-transform:uppercase;opacity:.9;margin:0 0 8px;font-weight:700}
+  .pdfdoc .pcover h1{font-size:1.7rem;margin:0;color:#fff;font-weight:800;line-height:1.25}
+  .pdfdoc .badges{margin-top:12px}
+  .pdfdoc .badge{display:inline-block;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.55);color:#fff;padding:4px 13px;border-radius:999px;font-size:.8rem;font-weight:700;margin:5px 8px 0 0}
+  .pdfdoc.rtl .badge{margin:5px 0 0 8px}
+  .pdfdoc .body{padding:24px 40px 0}
+  .pdfdoc .mini{font-size:.7rem;letter-spacing:2px;text-transform:uppercase;color:#7c3aed;font-weight:800;margin:0 0 7px}
+  body.lang-ar .pdfdoc .mini{letter-spacing:0}
+  .pdfdoc .introcard{background:#f5f3ff;border-left:5px solid #8b5cf6;border-radius:12px;padding:13px 17px;font-size:.95rem;line-height:1.75;margin-bottom:22px;color:#2a2550}
+  .pdfdoc.rtl .introcard{border-left:0;border-right:5px solid #8b5cf6}
+  .pdfdoc .sec-title{font-size:1.05rem;font-weight:800;color:#1b1f3b;border-left:4px solid #22d3ee;padding-left:12px;margin:0 0 12px}
+  .pdfdoc.rtl .sec-title{border-left:0;border-right:4px solid #22d3ee;padding-left:0;padding-right:12px}
+  .pdfdoc .tablewrap{border:1px solid #e6e2f5;border-radius:14px;overflow:hidden;margin-bottom:24px}
+  .pdfdoc table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:.9rem}
+  .pdfdoc th{background:linear-gradient(120deg,#7c3aed,#8b5cf6);color:#fff;text-align:left;padding:11px 14px;font-weight:700;font-size:.92rem;overflow-wrap:anywhere}
+  .pdfdoc.rtl th{text-align:right}
+  .pdfdoc td{padding:11px 14px;border-top:1px solid #efecf8;vertical-align:top;line-height:1.65;text-align:left;overflow-wrap:anywhere;word-break:break-word}
+  .pdfdoc.rtl td{text-align:right}
+  .pdfdoc td.k{font-weight:700;color:#3a2b66;background:#f3f0fc}
+  .pdfdoc tr.odd td.v{background:#faf9ff}
+  .pdfdoc ul{margin:3px 0 0;padding-left:18px}
+  .pdfdoc.rtl ul{padding-left:0;padding-right:18px}
+  .pdfdoc li{margin-bottom:3px}
+  .pdfdoc .k2{font-weight:700;color:#3a2b66}
+  .pdfdoc .note2{margin-top:7px;color:#7c5fb0;font-size:.85rem;background:#f6f1ff;border-radius:8px;padding:6px 11px}
+  .pdfdoc .ruleswrap{background:#fcfbff;border:1px solid #eee9f7;border-radius:14px;padding:8px 18px}
+  .pdfdoc .rule{display:flex;gap:11px;align-items:flex-start;width:100%;padding:8px 0;border-bottom:1px dashed #ece8f7}
+  .pdfdoc .rule:last-child{border-bottom:0}
+  .pdfdoc .rn{flex:none;width:25px;height:25px;border-radius:8px;background:linear-gradient(135deg,#22d3ee,#8b5cf6);color:#fff;font-weight:800;font-size:.78rem;display:flex;align-items:center;justify-content:center}
+  .pdfdoc .rt{flex:1;min-width:0;font-size:.88rem;line-height:1.6;color:#2a2c48}
+  .pdfdoc.rtl .ktag,.pdfdoc.rtl .pcover h1,.pdfdoc.rtl .mini,.pdfdoc.rtl .introcard,.pdfdoc.rtl .sec-title,.pdfdoc.rtl th,.pdfdoc.rtl td,.pdfdoc.rtl .k2,.pdfdoc.rtl li,.pdfdoc.rtl .note2,.pdfdoc.rtl .pre,.pdfdoc.rtl .badges,.pdfdoc.rtl .ruleswrap,.pdfdoc.rtl .rule,.pdfdoc.rtl .rt{direction:rtl;text-align:right}
+  .pdfdoc.rtl .rule{flex-direction:row-reverse}
+  .pdfdoc .pfoot{height:7px;background:linear-gradient(120deg,#22d3ee,#8b5cf6 55%,#f472b6);border-radius:999px;margin:24px 40px 0}
+
+  .moretoggle{display:flex;align-items:center;gap:11px;flex-wrap:wrap;width:100%;margin-top:13px;border:1px dashed var(--line-2);background:var(--field-2);cursor:pointer;color:var(--text);font-family:var(--f-body);font-weight:700;font-size:.97rem;padding:13px 16px;border-radius:var(--r-sm);transition:.2s}
+  .moretoggle:hover{border-color:var(--cyan);background:rgba(34,211,238,.06)}
+  .moretoggle:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+  .moretoggle .mt-ic{width:25px;height:25px;flex:none;display:grid;place-items:center;border-radius:8px;background:var(--btn-grad);color:var(--btn-ink);font-size:1.15rem;line-height:1;transition:transform .25s}
+  .moretoggle.open .mt-ic{transform:rotate(45deg)}
+  .moretoggle .mt-hint{color:var(--muted);font-weight:500;font-size:.82rem}
+  #formMore{margin-top:13px}
+
+  /* ============ MOBILE ============ */
+  @media (max-width:760px){
+    .wrap{padding:18px 13px 56px}
+    .glass{padding:17px 15px}
+    .row{grid-template-columns:1fr;gap:8px;padding:12px 13px}
+    .stage-l{padding-top:0}
+    .choices{grid-template-columns:1fr 1fr;gap:9px}
+    .corner{display:none}
+    .topbar{justify-content:center;text-align:center;gap:12px}
+    .brand{gap:11px}
+    .mark{width:48px;height:48px}
+    .term textarea{min-height:240px}
+  }
+  @media (max-width:480px){
+    .glass{padding:15px 13px;border-radius:16px}
+    .choices{grid-template-columns:1fr}
+    .chip{padding:11px 12px}
+    h2.title{font-size:1.3rem}
+    .sub{font-size:.92rem}
+    .creed{font-size:.9rem;padding:12px 14px}
+    .row{padding:11px 12px}
+    .seg button{padding:8px 18px}
+    .btn:not(.small){padding:12px 18px;font-size:.95rem}
+    .actions{gap:8px}
+    .term textarea{font-size:.92rem;min-height:220px}
+    input[type=text],textarea{font-size:1rem} /* ≥16px avoids iOS auto-zoom */
+  }
+  @media (max-width:360px){.choices{gap:8px}.brand-name{font-size:1.15rem}}
+
+  /* ============ PRINT → PDF (native browser rendering, perfect Arabic) ============ */
+  @media screen{#printArea{display:none}}
+  @media print{
+    html,body{background:#ffffff !important;margin:0 !important;padding:0 !important}
+    body>*{display:none !important}
+    body>#printArea{display:block !important}
+    #printArea .pdfdoc{width:100% !important;padding-bottom:0 !important}
+    #printArea .pdfdoc,#printArea .pdfdoc *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;color-adjust:exact !important}
+    #printArea .pcover{border-radius:0 !important}
+    #printArea tr,#printArea .rule,#printArea .introcard,#printArea .pcover,#printArea thead{break-inside:avoid}
+    #printArea .pfoot{display:none !important}
+    @page{size:A4;margin:13mm}
+  }
+
+  @media (prefers-reduced-motion:reduce){*{animation:none !important;transition-duration:.001ms !important}}
+</style>
+</head>
+<body class="lang-en theme-dark">
+  <div class="layer l-aurora" id="aurora" aria-hidden="true"></div>
+  <div class="layer l-grid" aria-hidden="true"><div class="grid-floor"></div><div class="grid-mask"></div></div>
+  <div class="layer l-dust" id="dust" aria-hidden="true"></div>
+
+  <div class="wrap">
+    <header class="topbar">
+      <div class="brand">
+        <svg class="mark" viewBox="0 0 100 100" aria-hidden="true">
+          <defs><linearGradient id="ng" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".55" stop-color="#8b5cf6"/><stop offset="1" stop-color="#f472b6"/></linearGradient></defs>
+          <polygon points="50,8 86,29 86,71 50,92 14,71 14,29" fill="none" stroke="url(#ng)" stroke-width="3"/>
+          <polygon points="50,24 72,37 72,63 50,76 28,63 28,37" fill="none" stroke="url(#ng)" stroke-width="2" opacity=".6"/>
+          <circle cx="50" cy="50" r="9" fill="url(#ng)"/><circle cx="50" cy="50" r="3.5" fill="#04121a"/>
+        </svg>
+        <div>
+          <h1 class="brand-name" data-ar="مهندس البرومبت" data-fr="Ingénieur de prompt" data-en="Prompt Engineer" data-zh="提示词工程师" data-hi="प्रॉम्प्ट इंजीनियर">Prompt Engineer</h1>
+          <p class="brand-tag" data-ar="فضاء لوريا · واجهة صياغة ذكية" data-fr="Espace Loria · Console intelligente de prompt" data-en="Loria Space · Smart Prompt Console" data-zh="洛里亚空间 · 智能提示词控制台" data-hi="लोरिया स्पेस · स्मार्ट प्रॉम्प्ट कंसोल">Loria Space · Smart Prompt Console</p>
+        </div>
+      </div>
+      <div class="controls">
+        <button class="iconpill danger" id="resetBtn" onclick="resetAll()" aria-label="Clear memory" title="Clear memory"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/></svg></button>
+        <button class="iconpill" id="themeBtn" onclick="toggleTheme()" aria-label="Day mode" title="Day mode"></button>
+        <div class="pillgrp lang-switcher" role="group" aria-label="Language">
+          <button id="btn-en" class="on" onclick="setLang('en')">English</button>
+          <button id="btn-ar" onclick="setLang('ar')">العربية</button>
+          <button id="btn-fr" onclick="setLang('fr')">Français</button>
+          <button id="btn-zh" onclick="setLang('zh')">简体中文</button>
+          <button id="btn-hi" onclick="setLang('hi')">हिन्दी</button>
+        </div>
+      </div>
+    </header>
+
+    <nav class="steps" aria-label="steps">
+      <button class="stepbtn active" data-step="1" onclick="goStep(1)"><span class="num">01</span><span class="lbl" data-ar="اختر" data-fr="Choisir" data-en="Choose" data-zh="选择" data-hi="चुनें">Choose</span></button>
+      <button class="stepbtn" data-step="2" onclick="goStep(2)"><span class="num">02</span><span class="lbl" data-ar="املأ" data-fr="Remplir" data-en="Fill" data-zh="填写" data-hi="भरें">Fill</span></button>
+      <button class="stepbtn" data-step="3" onclick="goStep(3)"><span class="num">03</span><span class="lbl" data-ar="صدّر" data-fr="Exporter" data-en="Export" data-zh="导出" data-hi="निर्यात">Export</span></button>
+    </nav>
+
+    <div class="stage">
+      <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
+
+      <!-- STEP 1 -->
+      <section id="step1" class="step show glass" aria-labelledby="t1">
+        <p class="eyebrow" data-ar="الوحدة 01 — نوع المخرج" data-fr="MODULE 01 — OUTPUT TYPE" data-en="Module 01 — Output type" data-zh="模块 01 — 输出类型" data-hi="मॉड्यूल ०१ — परिणाम प्रकार">Module 01 — Output type</p>
+        <div class="titlerow"><div class="lft">
+          <h2 id="t1" class="title" data-ar="ماذا تريد أن تصنع؟" data-fr="Que voulez-vous créer ?" data-en="What do you want to create?" data-zh="你想创建什么？" data-hi="आप क्या बनाना चाहते हैं?">What do you want to create?</h2>
+          <button class="info" data-info="choices" aria-label="شرح">!</button>
+        </div></div>
+        <p class="sub" data-ar="اختر بطاقة واحدة أو أكثر، ثم اضغط «ملء ذكي» ليُجهّز لك برومبتاً كاملاً تلقائياً" data-fr="Choisissez une ou plusieurs cartes, puis « Remplissage intelligent » pour générer automatiquement un prompt complet" data-en="Choose one or more cards, then press Smart Fill to prepare a complete prompt automatically" data-zh="选择一个或多个卡片，然后点击智能填写，自动生成完整提示词" data-hi="एक या अधिक कार्ड चुनें, फिर स्मार्ट भरें दबाएँ ताकि पूरा प्रॉम्प्ट अपने आप तैयार हो">Choose one or more cards, then press Smart Fill to prepare a complete prompt automatically</p>
+        <div class="choices" id="choices"></div>
+        <div class="actions">
+          <button class="btn" onclick="smartFillNext()"><span aria-hidden="true">✦</span><span data-ar="ملء ذكي" data-fr="Remplissage intelligent" data-en="Smart Fill" data-zh="智能填写" data-hi="स्मार्ट भरें">Smart Fill</span></button>
+          <span class="spacer"></span>
+          <button class="btn ghost" onclick="goStep(2)"><span data-ar="املأ يدوياً" data-fr="Manuel" data-en="Fill manually" data-zh="手动填写" data-hi="हाथ से भरें">Fill manually</span><span aria-hidden="true">›</span></button>
+        </div>
+      </section>
+
+      <!-- STEP 2 -->
+      <section id="step2" class="step glass" aria-labelledby="t2">
+        <p class="eyebrow" data-ar="الوحدة 02 — بطاقة المشروع" data-fr="MODULE 02 — PROJECT SHEET" data-en="Module 02 — Project sheet" data-zh="模块 02 — 项目表" data-hi="मॉड्यूल ०२ — परियोजना पत्र">Module 02 — Project sheet</p>
+        <div class="titlerow">
+          <div class="lft"><h2 id="t2" class="title" data-ar="املأ الحقول التي تحتاجها" data-fr="Remplissez les champs utiles" data-en="Fill the fields you need" data-zh="填写需要的字段" data-hi="ज़रूरी खाने भरें">Fill the fields you need</h2></div>
+          <button class="btn ghost small" onclick="smartFill()"><span aria-hidden="true">✦</span><span data-ar="ملء ذكي" data-fr="Remplissage intelligent" data-en="Smart Fill" data-zh="智能填写" data-hi="स्मार्ट भरें">Smart Fill</span></button>
+        </div>
+        <p class="sub" data-ar="«ملء ذكي» يملأ الحقول حسب نوع طلبك — وبجانب كل حقل علامة (!) تشرح ماذا تكتب" data-fr="« Remplissage intelligent » remplit les champs selon votre type de demande — et chaque champ a un (!) explicatif" data-en="Smart Fill completes the fields based on your request type — each field has a help mark explaining what to write" data-zh="智能填写会根据请求类型补全字段，每个字段旁都有帮助标记说明该写什么" data-hi="स्मार्ट भरें आपके अनुरोध के प्रकार के अनुसार खाने भरता है — हर खाने के पास सहायता चिन्ह बताता है कि क्या लिखना है">Smart Fill completes the fields based on your request type — each field has a help mark explaining what to write</p>
+
+        <div class="meter" id="meter2">
+          <div class="meter-top"><span class="lbl2" data-ar="قوة البرومبت" data-fr="Force du prompt" data-en="Prompt strength" data-zh="提示词强度" data-hi="प्रॉम्प्ट की शक्ति">Prompt strength</span><span class="mpct" id="mpct2">0%</span></div>
+          <div class="mtrack"><div class="mfill" id="mfill2"></div></div>
+          <div class="mtip" id="mtip2"></div>
+        </div>
+
+        <div class="note"><span class="b">◆</span><span data-ar="إن لم تكن تحتاج حقلاً، اتركه فارغاً — لن يظهر في الناتج." data-fr="Si un champ ne vous sert pas, laissez-le vide — il n'apparaîtra pas." data-en="Leave any unnecessary field empty — it will not appear in the output." data-zh="不需要的字段请留空，它不会出现在结果中。" data-hi="जिस खाने की ज़रूरत न हो उसे खाली छोड़ दें — वह परिणाम में नहीं दिखेगा।">Leave any unnecessary field empty — it will not appear in the output.</span></div>
+
+        <div class="creed">
+          <span class="lab" data-ar="السطر الافتتاحي للبرومبت" data-fr="Phrase d’ouverture du prompt" data-en="Prompt opening line" data-zh="提示词开头语" data-hi="प्रॉम्प्ट आरंभ पंक्ति">Prompt opening line</span>
+          <span id="creedText"></span>
+        </div>
+
+        <div class="rows" id="form"></div>
+        <button class="moretoggle" id="moreToggle" type="button" onclick="toggleMore()" aria-expanded="false">
+          <span class="mt-ic" aria-hidden="true">+</span>
+          <span data-ar="تفاصيل إضافية (اختياري)" data-fr="Plus de détails (optionnel)" data-en="Additional details optional" data-zh="附加细节 可选" data-hi="अतिरिक्त विवरण वैकल्पिक">Additional details optional</span>
+          <span class="mt-hint" data-ar="ليست ضرورية — «الملء الذكي» يملؤها عنك" data-fr="Pas obligatoire — le « Remplissage intelligent » s'en charge" data-en="Not required — Smart Fill can complete them for you" data-zh="非必填，智能填写可以替你完成" data-hi="ज़रूरी नहीं — स्मार्ट भरें इन्हें आपके लिए भर सकता है">Not required — Smart Fill can complete them for you</span>
+        </button>
+        <div class="rows" id="formMore" hidden></div>
+
+        <div class="actions">
+          <button class="btn ghost" onclick="goStep(1)"><span aria-hidden="true">‹</span><span data-ar="رجوع" data-fr="Retour" data-en="Back" data-zh="返回" data-hi="वापस">Back</span></button>
+          <span class="spacer"></span>
+          <button class="btn" onclick="toStep3()"><span aria-hidden="true">⟐</span><span data-ar="توليد البرومبت" data-fr="Générer" data-en="Generate prompt" data-zh="生成提示词" data-hi="प्रॉम्प्ट बनाएँ">Generate prompt</span></button>
+        </div>
+      </section>
+
+      <!-- STEP 3 -->
+      <section id="step3" class="step glass" aria-labelledby="t3">
+        <p class="eyebrow" data-ar="الوحدة 03 — التصدير" data-fr="MODULE 03 — EXPORT" data-en="Module 03 — Export" data-zh="模块 03 — 导出" data-hi="मॉड्यूल ०३ — निर्यात">Module 03 — Export</p>
+        <h2 id="t3" class="title" data-ar="برومبتك جاهز" data-fr="Votre prompt est prêt" data-en="Your prompt is ready" data-zh="你的提示词已准备好" data-hi="आपका प्रॉम्प्ट तैयार है">Your prompt is ready</h2>
+        <p class="sub" data-ar="صدّره DOCX جاهزاً، أو PDF عبر نافذة الطباعة (اختر «حفظ كـ PDF») — ثم أرفقه في أي ذكاء اصطناعي، أو انسخ النص." data-fr="Exportez-le en DOCX, ou en PDF via la fenêtre d'impression (« Enregistrer au format PDF ») — puis joignez-le à votre IA, ou copiez le texte." data-en="Export it as an editable document, or through the print window as a portable document — then attach it to any AI tool or copy the text." data-zh="可导出为可编辑文档，或通过打印窗口保存为便携文档，然后上传到任意人工智能工具，或直接复制文本。" data-hi="इसे संपादन योग्य दस्तावेज़ के रूप में, या मुद्रण विंडो से पोर्टेबल दस्तावेज़ के रूप में निर्यात करें — फिर किसी भी कृत्रिम बुद्धिमत्ता उपकरण में जोड़ें या पाठ कॉपी करें।">Export it as an editable document, or through the print window as a portable document — then attach it to any AI tool or copy the text.</p>
+
+        <div class="meter" id="meter3">
+          <div class="meter-top"><span class="lbl2" data-ar="قوة البرومبت" data-fr="Force du prompt" data-en="Prompt strength" data-zh="提示词强度" data-hi="प्रॉम्प्ट की शक्ति">Prompt strength</span><span class="mpct" id="mpct3">0%</span></div>
+          <div class="mtrack"><div class="mfill" id="mfill3"></div></div>
+          <div class="mtip" id="mtip3"></div>
+        </div>
+
+        <div class="term">
+          <div class="term-bar"><span class="led" style="background:#fb7185"></span><span class="led" style="background:#fbbf24"></span><span class="led" style="background:#34d399"></span><span style="margin-inline-start:6px" data-ar="معاينة البرومبت" data-fr="Aperçu du prompt" data-en="Prompt preview" data-zh="提示词预览" data-hi="प्रॉम्प्ट पूर्वावलोकन">Prompt preview</span></div>
+          <textarea id="output" spellcheck="false" aria-label="prompt"></textarea>
+        </div>
+
+        <div class="actions">
+          <button class="btn ghost" onclick="goStep(2)"><span aria-hidden="true">‹</span><span data-ar="تعديل" data-fr="Modifier" data-en="Edit" data-zh="编辑" data-hi="संपादित करें">Edit</span></button>
+          <button class="btn ghost" onclick="copyOut(this)"><span aria-hidden="true">⧉</span><span class="ctxt" data-ar="نسخ" data-fr="Copier" data-en="Copy" data-zh="复制" data-hi="कॉपी करें">Copy</span></button>
+          <span class="spacer"></span>
+          <button class="btn pdf" id="btnPdf" onclick="exportPDF(this)"><span aria-hidden="true">⤓</span><span data-ar="تحميل وثيقة" data-fr="Télécharger le document" data-en="Download document" data-zh="下载文档" data-hi="दस्तावेज़ डाउनलोड करें">Download document</span></button>
+          <button class="btn docx" id="btnDocx" onclick="exportDOCX(this)"><span aria-hidden="true">⤓</span><span data-ar="تحميل ملف قابل للتعديل" data-fr="Télécharger le fichier modifiable" data-en="Download editable file" data-zh="下载可编辑文件" data-hi="संपादन योग्य फ़ाइल डाउनलोड करें">Download editable file</span></button>
+        </div>
+      </section>
+    </div>
+
+    <footer><span data-ar="من إنجاز فضاء لوريا · إعداد: حمزة لحسيني" data-fr="Espace Loria · Hamza LAHSSINI" data-en="Created by Loria Space · Prepared by Hamza Lahssini" data-zh="洛里亚空间制作 · 哈姆扎·拉赫西尼" data-hi="लोरिया स्पेस द्वारा निर्मित · हमज़ा लहसिनी">Created by Loria Space · Prepared by Hamza Lahssini</span></footer>
+  </div>
+
+  <div id="pop" role="dialog" aria-live="polite"></div>
+  <div class="toast" id="toast"></div>
+  <div class="pdf-host" id="pdfHost" aria-hidden="true"></div>
+  <div id="printArea" aria-hidden="true"></div>
+
+<script>
+/* ===================== Prompt Engineer — Loria Space (HUD + smart) ===================== */
+let lang="en";
+const SUPPORTED_LANGS=["en","ar","fr","zh","hi"];
+const selected=new Set();
+
+/* guarded storage */
+const store={ok:true,get(k){if(!this.ok)return null;try{return localStorage.getItem(k);}catch(e){this.ok=false;return null;}},set(k,v){if(!this.ok)return;try{return localStorage.setItem(k,v);}catch(e){this.ok=false;}},del(k){if(!this.ok)return;try{return localStorage.removeItem(k);}catch(e){this.ok=false;}}};
+
+function capLang(l){return l.charAt(0).toUpperCase()+l.slice(1);}
+function objText(o,l=lang){return o ? (o[l] ?? "") : "";}
+function phKey(l){return "ph"+capLang(l);}
+function infoKey(l){return "info"+capLang(l);}
+function phText(o,l=lang){return o ? (o[phKey(l)] ?? "") : "";}
+function infoText(o,l=lang){return o ? (o[infoKey(l)] ?? "") : "";}
+function escAttr(s){return String(s??"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function i18nAttrs(o){return SUPPORTED_LANGS.map(l=>'data-'+l+'="'+escAttr(objText(o,l))+'"').join(' ');}
+function phAttrs(o){return SUPPORTED_LANGS.map(l=>'data-ph-'+l+'="'+escAttr(phText(o,l))+'"').join(' ');}
+function strObj(key){const o={};SUPPORTED_LANGS.forEach(l=>o[l]=(STR[l]&&STR[l][key])||STR.en[key]||"");return o;}
+function strKey(key,l=lang){return (STR[l]&&STR[l][key])||"";}
+function setInfoFromField(f){if(!f)return;const o={};SUPPORTED_LANGS.forEach(l=>o[l]=infoText(f,l));INFO[f.id]=o;}
+
+
+const STR={
+  ar:{
+    intro:"بصفتك ذكاءً اصطناعياً، يجب عليك اتباع الخطوات الموضحة في هذا الملف (بالصيغة المرفقة) وتزويدي بما أريده بالضبط، دون أي إضافات أو حذف، مع مراعاة المتطلبات التالية:",
+    wantLabel:"ما أريد إنشاءه:",detailsHeader:"تفاصيل الطلب:",
+    rulesHeader:"الضوابط الإلزامية (تنطبق على هذا الطلب وعلى كل مخرَج):",
+    yes:"نعم",no:"لا",
+    attachNote:"سأرفق ملفات مع هذا الطلب؛ حلّلها بدقة عالية ووظّفها بالكامل في تنفيذ المطلوب.",
+    refLabel:"نموذج/مرجع سابق (تصفّح الرابط أو حلّل المرفق بدقة عالية، واستلهم منه دون نسخ):",
+    secretLabel:"مفاتيح/أكواد للدمج:",
+    secretNote:"ادمج ما سبق في الموضع الصحيح من النتيجة كما هو تماماً دون تعديله، ولا تكشفه ضمن الشرح أو خارج موضعه.",
+    addText:"إضافة",delLabel:"حذف",docTitleFallback:"طلب موجّه إلى الذكاء الاصطناعي",
+    docTag:"ملف توجيه للذكاء الاصطناعي",colStage:"المرحلة",colDetail:"التفاصيل",
+    tCopy:"تم نسخ البرومبت ✓",tEmpty:"أضف بعض التفاصيل أولاً ◆",copied:"تم النسخ ✓",
+    tPdf:"جارٍ تجهيز الوثيقة…",tPdfOk:"تم تحميل الوثيقة ✓",tDocx:"جارٍ تجهيز الملف القابل للتعديل…",tDocxOk:"تم تحميل الملف القابل للتعديل ✓",
+    tLibPdf:"تعذّر تحميل مكتبة الوثائق — تحقّق من اتصالك بالإنترنت.",tLibDocx:"تعذّر تحميل مكتبة الملفات القابلة للتعديل — تحقّق من اتصالك بالإنترنت.",
+    tPrintHint:"تُفتح نافذة الطباعة — اختر حفظ الوثيقة ثم احفظ.",
+    tEx:"تم تحميل مثال — عدّله كما تشاء ✦",
+    tFillOk:"تم الملء الذكي — راجع الحقول وعدّلها كما تشاء ✦",
+    tPickType:"اختر نوع طلبك أولاً ثم اضغط «ملء ذكي» ◆",
+    tFillOk:"تم الملء الذكي — راجع الحقول وعدّلها كما تريد ✦",
+    tPickType:"اختر نوع طلبك أولاً، ثم اضغط «ملء ذكي» ◆",
+    resetLabel:"مسح الذاكرة",
+    resetConfirm:"هل تريد مسح كل الحقول والذاكرة المحفوظة والبدء من جديد؟",
+    tReset:"تم مسح الذاكرة — بدأنا من جديد ✓",
+    themeToLight:"الوضع النهاري",themeToDark:"الوضع الليلي",
+    mLow:"أضف الفكرة والنتيجة المنتظرة للحصول على أفضل نتيجة.",
+    mMid:"جيّد — أضف الجمهور والأسلوب لمزيد من الدقة.",
+    mHigh:"ممتاز — برومبت شامل وواضح!"
+  },
+  fr:{
+    intro:"En tant qu'intelligence artificielle, vous devez suivre les étapes décrites dans ce fichier (au format ci-joint) et me fournir exactement ce que je demande, sans aucun ajout ni suppression, en respectant les exigences suivantes :",
+    wantLabel:"Ce que je veux créer :",detailsHeader:"Détails de la demande :",
+    rulesHeader:"Règles impératives (valables pour cette demande et tout livrable) :",
+    yes:"Oui",no:"Non",
+    attachNote:"Je joindrai des fichiers à cette demande ; analysez-les avec une grande précision et exploitez-les pleinement.",
+    refLabel:"Modèle/référence (consultez le lien ou analysez la pièce jointe avec précision, pour vous en inspirer sans copier) :",
+    secretLabel:"Clés/codes à intégrer :",
+    secretNote:"Intégrez ce qui précède au bon endroit dans le résultat, tel quel et sans le modifier, sans le révéler dans les explications ni hors de son emplacement.",
+    addText:"Ajouter",delLabel:"Supprimer",docTitleFallback:"Demande adressée à l'IA",
+    docTag:"Brief de prompt pour l'IA",colStage:"Étape",colDetail:"Détails",
+    tCopy:"Prompt copié ✓",tEmpty:"Ajoutez d'abord quelques détails ◆",copied:"Copié ✓",
+    tPdf:"Préparation du document…",tPdfOk:"Document téléchargé ✓",tDocx:"Préparation du fichier modifiable…",tDocxOk:"Fichier modifiable téléchargé ✓",
+    tLibPdf:"Échec du chargement de la librairie du document — vérifiez votre connexion.",tLibDocx:"Échec du chargement de la librairie du fichier modifiable — vérifiez votre connexion.",
+    tPrintHint:"La fenêtre d'impression s'ouvre — choisissez « Enregistrer au format PDF » puis enregistrez.",
+    tEx:"Exemple chargé — modifiez-le à votre guise ✦",
+    tFillOk:"Remplissage intelligent effectué — vérifiez et ajustez ✦",
+    tPickType:"Choisissez d'abord le type de demande, puis « Remplissage intelligent » ◆",
+    tFillOk:"Remplissage intelligent effectué — vérifiez et ajustez ✦",
+    tPickType:"Choisissez d'abord le type de demande, puis « Remplissage intelligent » ◆",
+    resetLabel:"Effacer la mémoire",
+    resetConfirm:"Voulez-vous effacer tous les champs et la mémoire enregistrée, et recommencer ?",
+    tReset:"Mémoire effacée — nouveau départ ✓",
+    themeToLight:"Mode jour",themeToDark:"Mode nuit",
+    mLow:"Ajoutez l'idée et le résultat attendu pour un meilleur résultat.",
+    mMid:"Bien — ajoutez le public et le ton pour plus de précision.",
+    mHigh:"Excellent — prompt complet et clair !"
+  }
+};
+
+/* smart mandatory rules: cond = always | media | fileLogo | dev | rtl */
+const RULES=[
+  {cond:"always",ar:"ممنوع التملّق.",fr:"Pas de flatterie."},
+  {cond:"always",ar:"ممنوع الكذب.",fr:"Pas de mensonge."},
+  {cond:"always",ar:"ممنوع الهلوسة.",fr:"Pas d'hallucination."},
+  {cond:"always",ar:"ممنوع الاختلاق.",fr:"Pas d'invention."},
+  {cond:"always",ar:"يجب أن تكون كل المعلومات والإنجازات دقيقة، تلبّي التوقعات وتتجاوزها، بكفاءة عالية ودون أخطاء.",fr:"Toutes les informations et réalisations doivent être exactes, répondre aux attentes et les dépasser, avec efficacité et sans erreurs."},
+  {cond:"always",ar:"إن كان أي متطلب غامضاً أو ناقصاً، فاختر التفسير الأكثر احترافية ومنطقية الذي يخدم الهدف، ونفّذ على أساسه دون توقّف.",fr:"Si une exigence est ambiguë ou incomplète, choisissez l'interprétation la plus professionnelle et logique qui sert l'objectif, et exécutez sans vous arrêter."},
+  {cond:"always",ar:"صُغ كل شيء بأسلوب يفهمه الذكاء الاصطناعي بوضوح ويلبّي المتطلبات بدقة.",fr:"Formulez tout de manière claire, comprise par l'IA et répondant précisément aux exigences."},
+  {cond:"always",ar:"ممنوع التكرار أو الكلام العام أو السطحي.",fr:"Pas de répétition ni de propos généraux ou superficiels."},
+  {cond:"always",ar:"عند عدم معرفتك بشيء، ابحث في مصادر متخصصة وتعلّمه، ثم أجب بكفاءة عالية.",fr:"Si vous ignorez quelque chose, recherchez-le dans des sources spécialisées, apprenez-le, puis répondez efficacement."},
+  {cond:"always",ar:"فعّل أعلى نموذج/أعلى وضع متاح لديك في تنفيذ هذا الطلب.",fr:"Activez le modèle / le mode le plus performant dont vous disposez pour cette demande."},
+  {cond:"media",ar:"عند إنشاء صورة أو فيديو أو أي وسائط، اجعلها طبيعية واحترافية لا تبدو مولّدة آلياً (تجنّب المظهر البلاستيكي والرموز المشوّهة).",fr:"Pour toute image ou vidéo, rendez-la naturelle et professionnelle, sans aspect artificiel (évitez le rendu plastique et les symboles déformés)."},
+  {cond:"rtl",ar:"احترم دائماً اتجاه RTL للعربية وLTR للاتينية، مع محاذاة سليمة وتنسيق متقن.",fr:"Respectez toujours le sens RTL pour l'arabe et LTR pour le latin, avec un alignement correct et une mise en forme soignée."},
+  {cond:"fileLogo",ar:"عند إدراج ملف أو شعار، ضعه كما هو دون تشويه أو تصرّف في تفاصيله الدقيقة (يجوز إزالة الخلفية فقط إذا لزم).",fr:"Pour un fichier ou un logo fourni, intégrez-le tel quel, sans le déformer (seul le détourage de l'arrière-plan est permis si nécessaire)."},
+  {cond:"always",ar:"طبّق متطلبات المستخدم بعفوية داخل المُنتَج، دون ذكرها أو تكرارها بشكل حرفي.",fr:"Appliquez les exigences naturellement dans le produit final, sans les citer ni les répéter littéralement."},
+  {cond:"always",ar:"قدّم المُخرَج كاملاً دون اختصار أو حذف أو تلخيص، ولو كان طويلاً؛ واصل حتى إتمامه بالكامل.",fr:"Fournissez le livrable en entier, sans le raccourcir ni le résumer, même s'il est long ; continuez jusqu'à l'achèvement complet."},
+  {cond:"always",ar:"قدّم النتيجة في قالبها وبيئتها المناسبة مباشرةً، دون مقدمات فارغة ودون خاتمة من نوع عرض نسخة أفضل.",fr:"Livrez le résultat directement dans son format approprié, sans introduction inutile ni conclusion proposant une meilleure version."},
+  {cond:"dev",ar:"للمشاريع البرمجية، اعتمد مصادر مفتوحة المصدر ومجانية، وابحث في منصات متخصصة مثل GitHub بحسب المجال.",fr:"Pour les projets de développement, utilisez des ressources open source et gratuites, et consultez des plateformes comme GitHub selon le domaine."},
+  {cond:"dev",ar:"إذا وفّر المستخدم مفاتيح API أو بيانات سرّية خاصة بمشروعه، فأدمجها في الموضع الصحيح من الكود؛ وإن نسي توفيرها فنبّهه إلى مكان إضافتها.",fr:"Si l'utilisateur fournit des clés API ou des données confidentielles, intégrez-les au bon endroit dans le code ; s'il les a oubliées, indiquez où les ajouter."},
+  {cond:"always",ar:"تصرّف كمتخصص محترف في المجال المطلوب بالضبط.",fr:"Agissez en professionnel spécialiste du domaine exact demandé."},
+  {cond:"always",ar:"قبل التنفيذ، اطّلع على نماذج بارزة مشابهة واستلهم منها دون نسخ، ثم قدّم ما هو أفضل منها.",fr:"Avant de réaliser, examinez des exemples remarquables similaires pour vous en inspirer sans copier, puis proposez mieux."},
+  {cond:"always",ar:"قبل تسليم النتيجة، راجعها بدقّة مقابل كل متطلب أعلاه، وأصلح أي خطأ أو تعارض أو نقص.",fr:"Avant de livrer, relisez attentivement le résultat au regard de chaque exigence ci-dessus, et corrigez toute erreur, incohérence ou omission."},
+  {cond:"trans",ar:"في الترجمة، حافظ على المعنى والنبرة والسياق، ولا تترجم حرفياً؛ راعِ الاصطلاحات الثقافية والمصطلحات المتخصصة بدقة.",fr:"En traduction, préservez le sens, le ton et le contexte sans traduire mot à mot ; respectez les idiomes culturels et la terminologie spécialisée."},
+  {cond:"learn",ar:"عند التعليم، نظّم المحتوى في مسار متدرّج واضح، مع أمثلة عملية وتمارين قصيرة، وتنبيه إلى الأخطاء الشائعة.",fr:"Pour l'apprentissage, organisez le contenu en parcours progressif clair, avec exemples concrets, exercices courts et pièges fréquents à éviter."},
+  {cond:"song",ar:"في الأغنية، اعتمد بنية متماسكة (مقاطع/لازمة/جسر) مع قافية وإيقاع منسجمين يناسبان الإحساس المطلوب.",fr:"Pour la chanson, adoptez une structure cohérente (couplets/refrain/pont) avec une rime et un rythme harmonieux adaptés à l'émotion voulue."},
+  {cond:"academic",ar:"اكتب الفقرة بأسلوب أكاديمي علمي رصين ومنهجي، صحيحة لغوياً ودقيقة المعلومات، ومرتبطة مباشرةً بسياق المستخدم وموضوعه المحدّد.",fr:"Rédigez le paragraphe dans un style académique rigoureux et méthodique, linguistiquement correct et factuellement précis, en lien direct avec le contexte et le sujet précis de l'utilisateur."},
+  {cond:"academic",ar:"اجعل الكتابة بشرية وطبيعية تماماً بحيث لا تبدو مولّدة بالذكاء الاصطناعي، وبدون أي تشكيل للحروف (حركات) نهائياً.",fr:"Faites une écriture entièrement humaine et naturelle, ne paraissant pas générée par une IA ; et pour l'arabe, sans aucune vocalisation (harakât)."},
+  {cond:"always",ar:"لا تجب لمجرد الإجابة؛ قدّم ما يخدم المستخدم فعلاً ويحتاجه.",fr:"Ne répondez pas pour répondre ; fournissez ce qui sert et ce dont l'utilisateur a réellement besoin."}
+];
+
+const INFO={
+  choices:{ar:"اضغط على ما تريد أن ينجزه لك الذكاء الاصطناعي. يمكنك اختيار أكثر من بطاقة معاً. مثال: تريد صورة + نصاً؟ فعّل الاثنين.",fr:"Cliquez sur ce que l'IA doit réaliser. Vous pouvez en choisir plusieurs. Ex. : une image + un texte ? Activez les deux."}
+};
+
+const CHOICES=[
+  {id:"text",emo:"📝",ar:"نص عادي",fr:"Texte simple"},{id:"academic",emo:"🎓",ar:"فقرة بحث أكاديمي",fr:"Paragraphe académique"},{id:"consult",emo:"🧭",ar:"استشارة متخصصة",fr:"Consultation spécialisée"},
+  {id:"code",emo:"💻",ar:"كود برمجي",fr:"Code de programmation"},{id:"service",emo:"🔎",ar:"خدمة أو معرفة شيء",fr:"Service / information"},
+  {id:"image",emo:"🖼️",ar:"صورة",fr:"Image"},{id:"file",emo:"📄",ar:"ملف (PDF/HTML/DOCX...)",fr:"Fichier (PDF/HTML/DOCX...)"},
+  {id:"video",emo:"🎬",ar:"فيديو",fr:"Vidéo"},{id:"audio",emo:"🎧",ar:"صوتيات",fr:"Audio"},
+  {id:"convert",emo:"🔄",ar:"تحويل صيغة إلى أخرى",fr:"Conversion de format"},{id:"trans",emo:"🌐",ar:"ترجمة احترافية متخصصة",fr:"Traduction spécialisée"},
+  {id:"dash",emo:"📊",ar:"لوحة تحكم لموقع متخصص",fr:"Tableau de bord"},{id:"auto",emo:"⚙️",ar:"أتمتة سير عمل (JSON)",fr:"Automatisation (JSON)"},
+  {id:"fromfile",emo:"📎",ar:"إجابة من ملفات مرفقة",fr:"Réponse via fichiers joints"},{id:"learn",emo:"🚀",ar:"تعلّم مجال جديد في ساعة",fr:"Maîtriser un domaine en 1h"},
+  {id:"song",emo:"🎵",ar:"أغنية مخصصة",fr:"Chanson personnalisée"},{id:"invent",emo:"💡",ar:"اختراع شيء ما",fr:"Inventer quelque chose"},
+  {id:"other",emo:"✨",ar:"شيء آخر مخصص",fr:"Autre (personnalisé)"}
+];
+
+const FIELDS=[
+  {id:"idea",type:"textarea",ar:"الفكرة",fr:"L'idée",phAr:"اشرح فكرتك بوضوح وإيجاز...",phFr:"Expliquez votre idée clairement...",
+   infoAr:"ماذا تريد بالضبط؟ اكتب بكلمات بسيطة الشيء الذي يدور في ذهنك. مثال: «أريد تطبيقاً يذكّرني بشرب الماء» أو «مقال عن فوائد الرياضة». لا تفكّر كثيراً، فقط اكتب الفكرة كما تخطر لك.",
+   infoFr:"Que voulez-vous exactement ? Écrivez simplement ce que vous avez en tête. Ex. : « Une appli qui me rappelle de boire de l'eau ». Ne réfléchissez pas trop."},
+  {id:"role",type:"text",ar:"الدور",fr:"Le rôle",phAr:"مثال: تصرّف كخبير متخصص في...",phFr:"Ex : Agissez en expert en...",
+   infoAr:"أخبر الذكاء الاصطناعي بمن يتظاهر أنه يكون. حين تجعله «خبيراً» يعطيك نتيجة أفضل. مثال: «أنت مصمم محترف»، «أنت أستاذ تاريخ»، «أنت طبيب».",
+   infoFr:"Dites à l'IA quel rôle jouer. En la rendant « experte », le résultat s'améliore. Ex. : « Tu es un designer pro »."},
+  {id:"title",type:"text",ar:"اسم أو عنوان المشروع",fr:"Nom / titre du projet",phAr:"عنوان واضح للمشروع",phFr:"Un titre clair",
+   infoAr:"ما الاسم الذي تريده لعملك؟ مثل عنوان كتاب أو اسم تطبيق. مثال: «دفتر يومياتي». إن لم يكن لديك اسم، اتركه فارغاً.",
+   infoFr:"Quel nom pour votre travail ? Comme le titre d'un livre. Pas d'idée ? Laissez vide."},
+  {id:"features",type:"list",ar:"المميزات",fr:"Caractéristiques",phAr:"اكتب ميزة...",phFr:"Une caractéristique...",
+   infoAr:"ما الأشياء التي تريد أن يحتويها العمل؟ أضف كل ميزة في سطر بزر «+». مثال لتطبيق: زر تسجيل دخول، إشعارات، وضع ليلي.",
+   infoFr:"Que doit contenir votre travail ? Ajoutez chaque élément avec « + ». Ex. : bouton de connexion, notifications, mode sombre."},
+  {id:"design",type:"group",ar:"التصميم",fr:"Design",children:[
+    {id:"colors",type:"text",ar:"أكواد الألوان",fr:"Codes couleurs",phAr:"مثال: #22D3EE، أزرق، وردي",phFr:"Ex : #22D3EE, bleu, rose",
+     infoAr:"ما الألوان التي تحبها؟ اكتب اسم اللون (أزرق، وردي) أو كوده إن كنت تعرفه (مثل ‎#22D3EE). لا تعرف الأكواد؟ اكتب الأسماء فقط.",
+     infoFr:"Quelles couleurs ? Le nom (bleu, rose) ou le code (ex. #22D3EE). Sinon, juste les noms."},
+    {id:"fonts",type:"text",ar:"الخطوط (عربي/لاتيني أو أكثر)",fr:"Polices (arabe/latin)",phAr:"مثال: Tajawal، Orbitron",phFr:"Ex : Tajawal, Orbitron",
+     infoAr:"شكل الحروف (نوع الكتابة). إن كان لديك خط مفضّل اكتب اسمه، وإلا اتركه فارغاً وسيختار الذكاء خطاً جميلاً مناسباً.",
+     infoFr:"Le style des lettres. Police préférée ? Écrivez-la ; sinon laissez vide."},
+    {id:"sizes",type:"text",ar:"المقاسات (للصورة/الفيديو)",fr:"Dimensions (image/vidéo)",phAr:"مثال: 1080×1080، 16:9",phFr:"Ex : 1080×1080, 16:9",
+     infoAr:"إن كنت تريد صورة أو فيديو، ما حجمه؟ مثال: مربّع إنستغرام (1080×1080)، عريض يوتيوب (16:9). لا تعرف؟ اتركه فارغاً.",
+     infoFr:"Pour une image/vidéo, quelle taille ? Ex. : 1080×1080, 16:9. Vous ne savez pas ? Laissez vide."}
+  ]},
+  {id:"languages",type:"text",ar:"اللغات",fr:"Langues",phAr:"مثال: العربية والفرنسية",phFr:"Ex : Arabe et français",
+   infoAr:"بأي لغة تريد النتيجة؟ مثال: العربية فقط، أو العربية والفرنسية معاً.",
+   infoFr:"Dans quelle langue ? Ex. : arabe seul, ou arabe et français."},
+  {id:"warnings",type:"list",ar:"تحذيرات مخصصة",fr:"Avertissements perso.",phAr:"اكتب تحذيراً خاصاً...",phFr:"Un avertissement...",
+   infoAr:"أشياء تريد أن يتجنّبها الذكاء الاصطناعي. مثال: «لا تستخدم كلمات صعبة»، «ابتعد عن اللون الأحمر». أضف كل تحذير بزر «+».",
+   infoFr:"Ce que l'IA doit éviter. Ex. : « Pas de mots compliqués ». Ajoutez chacun avec « + »."},
+  {id:"audience",type:"text",ar:"الجمهور المستهدف",fr:"Public cible",phAr:"من سيستفيد من هذا؟",phFr:"À qui s'adresse-t-il ?",
+   infoAr:"لمن هذا العمل؟ من سيقرأه أو يستخدمه؟ مثال: أطفال، طلاب جامعة، سيدات أعمال. هذا يساعد الذكاء على ضبط الأسلوب.",
+   infoFr:"Pour qui ? Ex. : enfants, étudiants, professionnels. Cela aide l'IA à ajuster le ton."},
+  {id:"tone",type:"chips",ar:"الأسلوب والنبرة",fr:"Ton & style",optional:true,
+   infoAr:"بأي إحساس تريد النتيجة؟ اضغط ما يناسبك (يمكن أكثر من واحد). مثال: «تعليمي» + «بسيط» للأطفال، أو «احترافي» + «تسويقي» لإعلان.",
+   infoFr:"Quel ressenti pour le résultat ? Cliquez ce qui convient (plusieurs possibles). Ex. : « Pédagogique » + « Simple », ou « Pro » + « Marketing ».",
+   options:[{id:"pro",ar:"احترافي",fr:"Professionnel"},{id:"friendly",ar:"ودّي",fr:"Amical"},{id:"formal",ar:"رسمي",fr:"Formel"},{id:"marketing",ar:"تسويقي",fr:"Marketing"},{id:"edu",ar:"تعليمي",fr:"Pédagogique"},{id:"creative",ar:"إبداعي",fr:"Créatif"},{id:"concise",ar:"مختصر",fr:"Concis"},{id:"detailed",ar:"مفصّل",fr:"Détaillé"},{id:"simple",ar:"بسيط",fr:"Simple"}]},
+  {id:"attachments",type:"yesno",ar:"المرفقات",fr:"Pièces jointes",
+   infoAr:"هل سترفق ملفات مع طلبك (صورة، ملف، شعار)؟ اختر «نعم» إن كنت ستفعل، وسيُطلب من الذكاء قراءتها بعناية واستعمالها.",
+   infoFr:"Allez-vous joindre des fichiers ? Choisissez « Oui » et l'IA devra les lire et les utiliser."},
+  {id:"tech",type:"list",ar:"تقنية إلزامية",fr:"Technique obligatoire",phAr:"مثال: استخدم تقنية OCR",phFr:"Ex : Utilisez l'OCR",
+   infoAr:"هل تريد أن يستعمل الذكاء أداة معيّنة؟ مثال: «اقرأ النص من الصورة بتقنية OCR». إن لم تكن تعرف، اتركه فارغاً.",
+   infoFr:"Une technique précise ? Ex. : « Lis le texte avec l'OCR ». Sinon, laissez vide."},
+  {id:"count",type:"text",ar:"العدد (مثلاً عدد الصفحات)",fr:"Nombre (ex. pages)",phAr:"مثال: 5 صفحات، 10 أسئلة",phFr:"Ex : 5 pages, 10 questions",
+   infoAr:"كم تريد؟ مثال: 5 صفحات، 10 أسئلة، 3 صور. اكتب الرقم والشيء.",
+   infoFr:"Combien ? Ex. : 5 pages, 10 questions. Écrivez le nombre et la chose."},
+  {id:"chars",type:"text",ar:"عدد الأحرف",fr:"Nombre de caractères",optional:true,phAr:"مثال: 500 حرف، أو 800–1000 حرف",phFr:"Ex : 500 caractères, ou 800–1000",
+   infoAr:"هل تريد طول النص بعدد محدّد من الأحرف؟ اكتب الرقم أو مجالاً. مثال: «500 حرف» أو «بين 800 و1000 حرف». مفيد جداً للكتابة الأكاديمية. اتركه فارغاً إن لم تكن تحتاجه.",
+   infoFr:"Vous voulez une longueur en nombre de caractères ? Indiquez un nombre ou une plage. Ex. : « 500 caractères » ou « entre 800 et 1000 ». Très utile pour l'académique. Laissez vide sinon."},
+  {id:"reference",type:"textarea",ar:"نموذج سابق (رابط/وصف مرفق)",fr:"Référence (lien/description)",phAr:"ضع رابطاً أو صف المرجع الذي سترفقه...",phFr:"Un lien, ou décrivez la référence jointe...",
+   infoAr:"رأيت مثالاً يعجبك وتريد شيئاً مشابهاً؟ ضع رابطه هنا، أو صف الصورة/الملف الذي سترفقه. سيدرسه الذكاء ويستلهم منه دون نسخ.",
+   infoFr:"Un exemple qui vous plaît ? Mettez son lien, ou décrivez le fichier joint. L'IA s'en inspirera sans copier."},
+  {id:"secret",type:"textarea",ar:"مفاتيح / أكواد للدمج",fr:"Clés / codes à intégrer",optional:true,phAr:"ألصق هنا مفتاح API أو توكن أو رمزاً سرّياً أو كوداً معيّناً ليُدمج في النتيجة...",phFr:"Collez ici une clé API, un token, un code secret ou un bout de code à intégrer...",
+   infoAr:"إن كان لديك مفتاح API أو توكن (Token) أو رمز سرّي أو قطعة كود معيّنة تريد من الذكاء الاصطناعي أن يدمجها في المكان الصحيح من النتيجة كما هي، ألصقها هنا. مثال: مفتاح خدمة خرائط، توكن بوت، أو دالة جاهزة. (تبقى لديك في متصفحك فقط ولا تظهر للذكاء إلا داخل برومبتك.)",
+   infoFr:"Si vous avez une clé API, un token, un code secret ou un bout de code à faire intégrer par l'IA au bon endroit, tel quel, collez-le ici. Ex. : clé d'API de cartes, token de bot, fonction prête. (Reste uniquement dans votre navigateur, transmis seulement dans votre prompt.)"},
+  {id:"extra",type:"textarea",ar:"إضافات أخرى",fr:"Ajouts",phAr:"أي تفاصيل إضافية...",phFr:"Tout détail en plus...",
+   infoAr:"أي شيء آخر يدور في ذهنك ولم تجد له مكاناً في الحقول السابقة، اكتبه هنا بحرّية.",
+   infoFr:"Tout ce qui n'a pas de place ailleurs, écrivez-le ici librement."},
+  {id:"result",type:"textarea",ar:"النتيجة المنتظرة",fr:"Résultat attendu",phAr:"صف بدقة الشكل النهائي الذي تتوقعه...",phFr:"Décrivez précisément le résultat final...",
+   infoAr:"صف النهاية التي تحلم بها. كيف تريد الشكل النهائي؟ كلما وصفت بدقة اقترب الذكاء مما تريد. مثال: «وثيقة أنيقة جاهزة للطباعة فيها جدول ملوّن».",
+   infoFr:"Décrivez le résultat rêvé. Plus c'est précis, mieux c'est. Ex. : « Un document élégant prêt à imprimer »."}
+];
+
+/* ===================== RENDER ===================== */
+function el(t,c,a){const n=document.createElement(t);if(c)n.className=c;if(a)for(const k in a)n.setAttribute(k,a[k]);return n;}
+function infoBtn(key){const b=el("button","info",{type:"button","data-info":key,"aria-label":strKey("helpLabel")});b.textContent="!";return b;}
+
+function renderChoices(){
+  const w=document.getElementById("choices");w.innerHTML="";
+  CHOICES.forEach(c=>{
+    const b=el("button","chip",{type:"button","aria-pressed":"false","data-id":c.id});
+    b.innerHTML='<span class="emo" aria-hidden="true">'+c.emo+'</span><span class="ctxt" '+i18nAttrs(c)+'>'+objText(c)+'</span><svg class="tick" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    b.addEventListener("click",()=>{const on=b.getAttribute("aria-pressed")==="true";b.setAttribute("aria-pressed",on?"false":"true");if(on)selected.delete(c.id);else{selected.add(c.id);burst(b);}touch();});
+    w.appendChild(b);
+  });
+}
+const CORE=["idea","role","audience","result"];
+function renderForm(){
+  const f=document.getElementById("form");f.innerHTML="";
+  const more=document.getElementById("formMore");if(more)more.innerHTML="";
+  FIELDS.forEach(fl=>{(CORE.includes(fl.id)||!more?f:more).appendChild(buildRow(fl));});
+}
+function setMoreOpen(open){
+  const m=document.getElementById("formMore"),b=document.getElementById("moreToggle");if(!m||!b)return;
+  if(open){m.removeAttribute("hidden");b.classList.add("open");b.setAttribute("aria-expanded","true");}
+  else{m.setAttribute("hidden","");b.classList.remove("open");b.setAttribute("aria-expanded","false");}
+}
+function toggleMore(){const m=document.getElementById("formMore");setMoreOpen(!!m&&m.hasAttribute("hidden"));}
+function moreHasContent(){return FIELDS.some(f=>{if(CORE.includes(f.id))return false;if(f.type==="group")return f.children.some(c=>val(c.id));if(f.type==="list")return listVals(f.id).length;if(f.type==="yesno")return yn(f.id)==="yes";if(f.type==="chips")return chipVals(f.id).length;return val(f.id);});}
+
+function buildRow(f){
+  const row=el("div","row");
+  const sl=el("div","stage-l");
+  sl.innerHTML='<span class="dot"></span><span class="nm" '+i18nAttrs(f)+'>'+objText(f)+'</span>';
+  if(f.optional)sl.insertAdjacentHTML("beforeend",' <span class="opt" '+i18nAttrs({en:"Optional",ar:"اختياري",fr:"optionnel",zh:"可选",hi:"वैकल्पिक"})+'> '+objText({en:"Optional",ar:"اختياري",fr:"optionnel",zh:"可选",hi:"वैकल्पिक"})+'</span>');
+  if(infoText(f)){setInfoFromField(f);sl.appendChild(infoBtn(f.id));}
+  const ctrl=el("div","ctrl");
+  if(f.type==="text"||f.type==="textarea")ctrl.appendChild(makeInput(f));
+  else if(f.type==="group"){
+    const g=el("div","subgroup");
+    f.children.forEach(ch=>{const sf=el("div","subfield");const lab=el("div","slab");lab.innerHTML='<span '+i18nAttrs(ch)+'>'+objText(ch)+'</span>';if(infoText(ch)){setInfoFromField(ch);lab.appendChild(infoBtn(ch.id));}sf.appendChild(lab);sf.appendChild(makeInput(ch));g.appendChild(sf);});
+    ctrl.appendChild(g);
+  }
+  else if(f.type==="list")ctrl.appendChild(makeList(f));
+  else if(f.type==="yesno")ctrl.appendChild(makeYesNo(f));
+  else if(f.type==="chips")ctrl.appendChild(makeChips(f));
+  row.appendChild(sl);row.appendChild(ctrl);return row;
+}
+function makeInput(f){const area=f.type==="textarea";const i=el(area?"textarea":"input",null,{id:"f_"+f.id});if(!area)i.type="text";SUPPORTED_LANGS.forEach(l=>i.setAttribute("data-ph-"+l,phText(f,l)));i.placeholder=phText(f);return i;}
+function makeList(f){
+  const box=el("div","list",{id:"list_"+f.id});
+  const add=el("button","addbtn",{type:"button"});
+  add.innerHTML='<span class="p" aria-hidden="true">+</span><span '+i18nAttrs(strObj("addText"))+'>'+strKey("addText")+'</span>';
+  add.addEventListener("click",()=>{addItem(box,f);burst(add);touch();});
+  box.appendChild(add);addItem(box,f);return box;
+}
+function addItem(box,f){
+  const it=el("div","item");
+  const i=el("input",null,{type:"text"});SUPPORTED_LANGS.forEach(l=>i.setAttribute("data-ph-"+l,phText(f,l)));i.placeholder=phText(f);
+  const m=el("button","iconbtn minus",{type:"button","aria-label":STR[lang].delLabel});m.textContent="–";
+  m.addEventListener("click",()=>{it.remove();touch();});
+  it.appendChild(i);it.appendChild(m);box.insertBefore(it,box.querySelector(".addbtn"));return i;
+}
+function makeYesNo(f){
+  const box=el("div");const seg=el("div","seg",{role:"group","data-yesno":f.id});
+  const y=el("button",null,{type:"button","data-v":"yes","aria-pressed":"false"});SUPPORTED_LANGS.forEach(l=>y.setAttribute("data-"+l,strKey("yes",l)));y.textContent=strKey("yes");
+  const n=el("button",null,{type:"button","data-v":"no","aria-pressed":"false"});SUPPORTED_LANGS.forEach(l=>n.setAttribute("data-"+l,strKey("no",l)));n.textContent=strKey("no");
+  [y,n].forEach(btn=>btn.addEventListener("click",()=>{y.setAttribute("aria-pressed",btn===y?"true":"false");n.setAttribute("aria-pressed",btn===n?"true":"false");touch();}));
+  seg.appendChild(y);seg.appendChild(n);box.appendChild(seg);return box;
+}
+function makeChips(f){
+  const box=el("div","tonewrap",{"data-chips":f.id});
+  f.options.forEach(o=>{const b=el("button","pill",{type:"button","aria-pressed":"false","data-id":o.id});b.innerHTML='<span class="ctxt" '+i18nAttrs(o)+'>'+objText(o)+'</span>';b.addEventListener("click",()=>{const on=b.getAttribute("aria-pressed")==="true";b.setAttribute("aria-pressed",on?"false":"true");if(!on)burst(b);touch();});box.appendChild(b);});
+  return box;
+}
+
+/* ===================== VALUES ===================== */
+function val(id){const e=document.getElementById("f_"+id);return e?e.value.trim():"";}
+function listVals(id){const b=document.getElementById("list_"+id);if(!b)return[];return[...b.querySelectorAll("input")].map(i=>i.value.trim()).filter(Boolean);}
+function yn(id){const s=document.querySelector('[data-yesno="'+id+'"]');if(!s)return null;const o=s.querySelector('[aria-pressed="true"]');return o?o.getAttribute("data-v"):null;}
+function chipVals(id){const s=document.querySelector('[data-chips="'+id+'"]');if(!s)return[];return[...s.querySelectorAll('[aria-pressed="true"]')].map(b=>b.getAttribute("data-id"));}
+
+/* context for smart rules */
+function ctxNow(){
+  const has=id=>selected.has(id);
+  const att=yn("attachments")==="yes";
+  const onlyAudio=selected.size>0 && [...selected].every(id=>id==="audio");
+  return {
+    media:has("image")||has("video")||has("song")||has("convert"),
+    fileLogo:att||has("file")||has("image")||has("convert")||has("dash"),
+    dev:has("code")||has("dash")||has("auto"),
+    rtl:!onlyAudio||!!val("languages")||!!val("title")
+  };
+}
+/* a rule is kept only if it serves the request: always, a context flag, or a selected type id */
+function activeRules(){
+  const c=ctxNow();
+  return RULES.filter(r=>{
+    if(r.cond==="always")return true;
+    if(Object.prototype.hasOwnProperty.call(c,r.cond))return c[r.cond];
+    return selected.has(r.cond);
+  }).map(r=>r[lang]);
+}
+
+function buildModel(){
+  const t=STR[lang];const sep=lang==="ar"?"، ":", ";
+  const chosen=[...selected].map(id=>{const c=CHOICES.find(x=>x.id===id);return c?objText(c):"";}).filter(Boolean);
+  const rows=[];
+  FIELDS.forEach(f=>{
+    if(f.type==="group"){const lines=f.children.map(ch=>{const v=val(ch.id);return v?{k:objText(ch),v}:null;}).filter(Boolean);if(lines.length)rows.push({label:objText(f),lines});}
+    else if(f.type==="list"){const items=listVals(f.id);if(items.length)rows.push({label:objText(f),items});}
+    else if(f.type==="yesno"){if(yn(f.id)==="yes")rows.push({label:objText(f),text:t.yes,note:t.attachNote});}
+    else if(f.type==="chips"){const ids=chipVals(f.id);if(ids.length){const labels=ids.map(id=>{const o=f.options.find(x=>x.id===id);return o?objText(o):id;});rows.push({label:objText(f),text:labels.join(sep)});}}
+    else if(f.id==="reference"){const v=val(f.id);if(v)rows.push({label:t.refLabel,text:v,raw:true});}
+    else if(f.id==="secret"){const v=val(f.id);if(v)rows.push({label:t.secretLabel,text:v,raw:true,note:t.secretNote});}
+    else{const v=val(f.id);if(v)rows.push({label:objText(f),text:v});}
+  });
+  return {intro:t.intro,wantLabel:t.wantLabel,chosen,sep,detailsHeader:t.detailsHeader,rows,rulesHeader:t.rulesHeader,rules:activeRules(),title:val("title")};
+}
+
+function buildText(){
+  const m=buildModel(),o=[];
+  o.push(m.intro,"");
+  if(m.chosen.length)o.push(m.wantLabel+" "+m.chosen.join(m.sep),"");
+  if(m.rows.length){
+    o.push(m.detailsHeader);
+    m.rows.forEach(r=>{
+      if(r.lines){o.push("• "+r.label+":");r.lines.forEach(l=>o.push("  - "+l.k+": "+l.v));}
+      else if(r.items){o.push("• "+r.label+":");r.items.forEach(it=>o.push("  - "+it));}
+      else if(r.raw){o.push("• "+r.label);o.push("  "+r.text);if(r.note)o.push("  "+r.note);}
+      else{o.push("• "+r.label+": "+r.text);if(r.note)o.push("  "+r.note);}
+    });
+    o.push("");
+  }
+  o.push(m.rulesHeader);
+  m.rules.forEach((w,i)=>o.push((i+1)+". "+w));
+  return o.join("\n");
+}
+function syncPreview(){if(document.getElementById("step3").classList.contains("show"))document.getElementById("output").value=buildText();}
+
+/* ===================== METER ===================== */
+function promptScore(){let s=0;if(selected.size)s+=20;if(val("idea"))s+=24;if(val("result"))s+=20;if(val("role"))s+=10;if(val("audience"))s+=8;if(listVals("features").length)s+=8;if(chipVals("tone").length)s+=5;if(val("title"))s+=5;return Math.min(100,s);}
+function updateMeters(){
+  const p=promptScore();const tip=p<40?STR[lang].mLow:(p<76?STR[lang].mMid:STR[lang].mHigh);
+  ["2","3"].forEach(n=>{const f=document.getElementById("mfill"+n),pc=document.getElementById("mpct"+n),tp=document.getElementById("mtip"+n);if(f)f.style.width=p+"%";if(pc)pc.textContent=p+"%";if(tp)tp.textContent=tip;});
+}
+function hasContent(){if(selected.size)return true;return FIELDS.some(f=>{if(f.type==="group")return f.children.some(c=>val(c.id));if(f.type==="list")return listVals(f.id).length;if(f.type==="yesno")return yn(f.id)==="yes";if(f.type==="chips")return chipVals(f.id).length;return val(f.id);});}
+function touch(){scheduleSave();updateMeters();syncPreview();}
+
+/* ===================== NAV ===================== */
+function goStep(n){
+  document.querySelectorAll(".step").forEach(s=>s.classList.remove("show"));
+  document.getElementById("step"+n).classList.add("show");
+  document.querySelectorAll(".stepbtn").forEach(b=>{const s=+b.getAttribute("data-step");b.classList.toggle("active",s===n);b.classList.toggle("done",s<n);});
+  updateMeters();closePop();window.scrollTo({top:0,behavior:"smooth"});
+}
+function toStep3(){if(!hasContent()){toast(STR[lang].tEmpty);return;}document.getElementById("output").value=buildText();goStep(3);}
+
+/* ===================== COPY ===================== */
+function copyOut(btn){const txt=document.getElementById("output").value;const done=()=>{toast(STR[lang].tCopy);const s=btn.querySelector(".ctxt"),o=s.textContent;s.textContent=STR[lang].copied;setTimeout(()=>s.textContent=o,1500);};if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(done).catch(()=>fb(txt,done));else fb(txt,done);burst(btn);}
+function fb(t,cb){const a=document.createElement("textarea");a.value=t;a.style.position="fixed";a.style.opacity="0";document.body.appendChild(a);a.select();try{document.execCommand("copy");cb&&cb();}catch(e){}a.remove();}
+function safeName(){let n=(val("title")||strKey("fileNameDefault")).replace(/[\\/:*?"<>|]/g,"").trim().slice(0,46);return n||"prompt";}
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+
+/* ===================== PDF EXPORT ===================== */
+function buildPdfHTML(){
+  const m=buildModel();const rtl=lang==="ar";const title=m.title||STR[lang].docTitleFallback;
+  const KW="34%";
+  const badges=m.chosen.map(c=>"<span class='badge'>"+esc(c)+"</span>").join("");
+  let rows="";
+  m.rows.forEach((r,i)=>{
+    let cell="";
+    if(r.lines)cell="<ul>"+r.lines.map(l=>"<li><span class='k2'>"+esc(l.k)+":</span> "+esc(l.v)+"</li>").join("")+"</ul>";
+    else if(r.items)cell="<ul>"+r.items.map(it=>"<li>"+esc(it)+"</li>").join("")+"</ul>";
+    else if(r.raw){cell="<div class='pre'>"+esc(r.text)+"</div>";if(r.note)cell+="<div class='note2'>"+esc(r.note)+"</div>";}
+    else{cell=esc(r.text);if(r.note)cell+="<div class='note2'>"+esc(r.note)+"</div>";}
+    const kCell="<td class='k' style='width:"+KW+"'>"+esc(r.label)+"</td>";
+    const vCell="<td class='v'>"+cell+"</td>";
+    rows+="<tr class='"+(i%2?'odd':'even')+"'>"+(rtl?vCell+kCell:kCell+vCell)+"</tr>";
+  });
+  const thK="<th style='width:"+KW+"'>"+esc(STR[lang].colStage)+"</th>";
+  const thV="<th>"+esc(STR[lang].colDetail)+"</th>";
+  const table=m.rows.length?("<p class='mini'>"+esc(m.detailsHeader)+"</p><div class='tablewrap'><table><thead><tr>"+(rtl?thV+thK:thK+thV)+"</tr></thead><tbody>"+rows+"</tbody></table></div>"):"";
+  const rules="<div class='ruleswrap'>"+m.rules.map((w,i)=>"<div class='rule'><span class='rn'>"+(i+1)+"</span><span class='rt'>"+esc(w)+"</span></div>").join("")+"</div>";
+  return "<div class='pdfdoc"+(rtl?" rtl":"")+"' dir='ltr'>"+
+    "<div class='pcover'><p class='ktag'>"+esc(STR[lang].docTag)+"</p><h1>"+esc(title)+"</h1>"+(badges?"<div class='badges'>"+badges+"</div>":"")+"</div>"+
+    "<div class='body'>"+
+      "<div class='introcard'>"+esc(m.intro)+"</div>"+
+      table+
+      "<p class='sec-title'>"+esc(m.rulesHeader)+"</p>"+rules+
+    "</div><div class='pfoot'></div></div>";
+}
+let _origTitle=(typeof document!=="undefined"&&document.title)||"";
+function exportPDF(btn){
+  const area=document.getElementById("printArea");
+  if(!area)return;
+  area.innerHTML=buildPdfHTML();
+  _origTitle=document.title;try{document.title=safeName();}catch(e){}
+  toast(STR[lang].tPrintHint);
+  burst(btn);
+  setTimeout(function(){try{window.print();}catch(e){}},90);
+}
+window.addEventListener("afterprint",function(){const a=document.getElementById("printArea");if(a)a.innerHTML="";try{document.title=_origTitle;}catch(e){}});
+
+/* ===================== DOCX EXPORT ===================== */
+function exportDOCX(btn){
+  if(typeof window.docx==="undefined"){toast(STR[lang].tLibDocx);return;}
+  toast(STR[lang].tDocx);btn.disabled=true;
+  try{
+    const D=window.docx;const m=buildModel();const rtl=lang==="ar";
+    const A=D.AlignmentType,W=D.WidthType,B=D.BorderStyle;const FONT="Tajawal";
+    const al=rtl?A.RIGHT:A.LEFT;
+    const bd={style:B.SINGLE,size:4,color:"E2DEF1"};const none={style:B.NONE,size:0,color:"FFFFFF"};
+    const P=(text,o)=>new D.Paragraph({bidirectional:rtl,alignment:(o&&o.align)||al,spacing:{after:(o&&o.after!=null)?o.after:60},children:[new D.TextRun({text:text||"",bold:!!(o&&o.bold),color:o&&o.color,size:(o&&o.size)||22,font:FONT})]});
+
+    /* banner */
+    const banner=new D.Table({width:{size:100,type:W.PERCENTAGE},visuallyRightToLeft:rtl,borders:{top:none,bottom:none,left:none,right:none,insideHorizontal:none,insideVertical:none},rows:[new D.TableRow({children:[new D.TableCell({shading:{fill:"6D28D9"},margins:{top:200,bottom:200,left:240,right:240},children:[
+      new D.Paragraph({bidirectional:rtl,alignment:al,spacing:{after:40},children:[new D.TextRun({text:STR[lang].docTag.toUpperCase(),color:"D9CBFF",size:16,bold:true,font:FONT})]}),
+      new D.Paragraph({bidirectional:rtl,alignment:al,spacing:{after:m.chosen.length?60:0},children:[new D.TextRun({text:m.title||STR[lang].docTitleFallback,color:"FFFFFF",size:36,bold:true,font:FONT})]})
+    ].concat(m.chosen.length?[new D.Paragraph({bidirectional:rtl,alignment:al,children:[new D.TextRun({text:m.wantLabel+" "+m.chosen.join(m.sep),color:"EDE7FF",size:19,font:FONT})]})]:[])})]})]});
+
+    /* intro accent card */
+    const introCard=new D.Table({width:{size:100,type:W.PERCENTAGE},visuallyRightToLeft:rtl,borders:{top:none,bottom:none,left:none,right:none,insideHorizontal:none,insideVertical:none},rows:[new D.TableRow({children:[new D.TableCell({shading:{fill:"F5F3FF"},margins:{top:140,bottom:140,left:200,right:200},borders:rtl?{right:{style:B.SINGLE,size:24,color:"8B5CF6"},left:none,top:none,bottom:none}:{left:{style:B.SINGLE,size:24,color:"8B5CF6"},right:none,top:none,bottom:none},children:[P(m.intro,{size:22,color:"2A2550",after:0})]})]})]});
+
+    const headLine=(txt,color)=>new D.Paragraph({bidirectional:rtl,alignment:al,spacing:{before:240,after:120},border:{bottom:{style:B.SINGLE,size:12,color:color,space:6}},children:[new D.TextRun({text:txt,bold:true,size:25,color:"1B1F3B",font:FONT})]});
+
+    const body=[banner,P("",{after:160}),introCard];
+
+    if(m.rows.length){
+      body.push(headLine(m.detailsHeader,"22D3EE"));
+      const hc=(t)=>new D.TableCell({shading:{fill:"7C3AED"},margins:{top:70,bottom:70,left:120,right:120},children:[P(t,{bold:true,color:"FFFFFF",after:0})]});
+      const trs=[new D.TableRow({tableHeader:true,children:[hc(STR[lang].colStage),hc(STR[lang].colDetail)]})];
+      m.rows.forEach((r,i)=>{
+        let kids;
+        if(r.lines)kids=r.lines.map(l=>P("• "+l.k+": "+l.v,{size:21,after:30}));
+        else if(r.items)kids=r.items.map(it=>P("• "+it,{size:21,after:30}));
+        else if(r.raw){const ln=String(r.text).split("\n");kids=ln.map((s,j)=>P(s||" ",{size:20,after:(j===ln.length-1&&!r.note)?0:18}));if(r.note)kids.push(P(r.note,{size:20,color:"7C5FB0",after:0}));}
+        else{kids=[P(r.text,{size:21,after:r.note?30:0})];if(r.note)kids.push(P(r.note,{size:20,color:"7C5FB0",after:0}));}
+        trs.push(new D.TableRow({children:[
+          new D.TableCell({shading:{fill:"F3F0FC"},margins:{top:70,bottom:70,left:120,right:120},width:{size:30,type:W.PERCENTAGE},children:[P(r.label,{bold:true,color:"3A2B66",size:21,after:0})]}),
+          new D.TableCell({shading:{fill:i%2?"FAF9FF":"FFFFFF"},margins:{top:70,bottom:70,left:120,right:120},width:{size:70,type:W.PERCENTAGE},children:kids})
+        ]}));
+      });
+      body.push(new D.Table({width:{size:100,type:W.PERCENTAGE},visuallyRightToLeft:rtl,borders:{top:bd,bottom:bd,left:bd,right:bd,insideHorizontal:bd,insideVertical:bd},rows:trs}));
+    }
+
+    body.push(headLine(m.rulesHeader,"F472B6"));
+    m.rules.forEach((w,i)=>body.push(new D.Paragraph({bidirectional:rtl,alignment:al,spacing:{after:70},children:[new D.TextRun({text:(i+1)+". ",bold:true,color:"7C3AED",size:21,font:FONT}),new D.TextRun({text:w,size:21,font:FONT})]})));
+
+    const doc=new D.Document({sections:[{properties:{page:{margin:{top:560,bottom:620,left:560,right:560}}},children:body}]});
+    D.Packer.toBlob(doc).then(blob=>{const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=safeName()+".docx";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1500);toast(STR[lang].tDocxOk);burst(btn);}).catch(()=>toast(STR[lang].tLibDocx)).finally(()=>btn.disabled=false);
+  }catch(e){toast(STR[lang].tLibDocx);btn.disabled=false;}
+}
+
+/* ===================== INFO POPOVER ===================== */
+const pop=document.getElementById("pop");let popOpenBtn=null;
+function openPop(btn){
+  const key=btn.getAttribute("data-info");const data=INFO[key];if(!data)return;
+  const popTitle={en:"Simple explanation",ar:"شرح مبسّط",fr:"Explication simple",zh:"简要说明",hi:"सरल व्याख्या"}[lang]||"Simple explanation";
+  const body=(data[lang]||data.en||data.fr||data.ar||"").replace(/&/g,"&amp;").replace(/</g,"&lt;");
+  pop.innerHTML='<div class="pop-h"><span class="ic">!</span><span>'+popTitle+'</span></div><div>'+body+'</div>';
+  pop.classList.add("show");
+  const r=btn.getBoundingClientRect();const pw=Math.min(330,window.innerWidth-24);pop.style.width=pw+"px";
+  let top=r.bottom+10,left=r.left+r.width/2-pw/2;left=Math.max(12,Math.min(left,window.innerWidth-pw-12));
+  const ph=pop.offsetHeight;if(top+ph>window.innerHeight-12)top=Math.max(12,r.top-ph-10);
+  pop.style.left=left+"px";pop.style.top=top+"px";
+  document.querySelectorAll(".info.on").forEach(b=>b.classList.remove("on"));btn.classList.add("on");popOpenBtn=btn;
+}
+function closePop(){pop.classList.remove("show");if(popOpenBtn){popOpenBtn.classList.remove("on");popOpenBtn=null;}}
+document.addEventListener("click",e=>{const ib=e.target.closest(".info");if(ib){e.stopPropagation();if(popOpenBtn===ib)closePop();else openPop(ib);return;}if(!e.target.closest("#pop"))closePop();});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closePop();});
+window.addEventListener("resize",closePop);
+window.addEventListener("scroll",()=>{if(popOpenBtn)closePop();},true);
+
+/* ===================== THEME ===================== */
+function applyThemeIcon(){
+  const b=document.getElementById("themeBtn");const light=document.body.classList.contains("theme-light");
+  const lbl=light?STR[lang].themeToDark:STR[lang].themeToLight;b.setAttribute("aria-label",lbl);b.setAttribute("title",lbl);
+  b.innerHTML=light
+    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>'
+    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M19.1 4.9l-1.8 1.8M6.7 17.3l-1.8 1.8"/></svg>';
+}
+function toggleTheme(){const light=document.body.classList.toggle("theme-light");document.body.classList.toggle("theme-dark",!light);store.set("lp_theme",light?"light":"dark");applyThemeIcon();}
+
+/* ===================== LANGUAGE ===================== */
+function setLang(l){
+  if(!SUPPORTED_LANGS.includes(l))l="en";
+  lang=l;const h=document.documentElement;h.lang=l==="zh"?"zh-Hans":l;h.dir=l==="ar"?"rtl":"ltr";
+  document.body.classList.remove(...SUPPORTED_LANGS.map(x=>"lang-"+x));document.body.classList.add("lang-"+l);
+  SUPPORTED_LANGS.forEach(x=>{const btn=document.getElementById("btn-"+x);if(btn)btn.classList.toggle("on",x===l);});
+  document.querySelectorAll("[data-en],[data-ar],[data-fr],[data-zh],[data-hi]").forEach(n=>{const v=n.getAttribute("data-"+l)||n.getAttribute("data-en")||n.getAttribute("data-fr")||n.getAttribute("data-ar");if(v!=null)n.textContent=v;});
+  document.querySelectorAll("[data-ph-en],[data-ph-ar],[data-ph-fr],[data-ph-zh],[data-ph-hi]").forEach(n=>{if("placeholder" in n)n.placeholder=n.getAttribute("data-ph-"+l)||n.getAttribute("data-ph-en")||n.getAttribute("data-ph-fr")||n.getAttribute("data-ph-ar")||"";});
+  document.querySelectorAll(".iconbtn.minus").forEach(b=>b.setAttribute("aria-label",strKey("delLabel")));
+  document.querySelectorAll(".info").forEach(b=>b.setAttribute("aria-label",strKey("helpLabel")));
+  document.getElementById("creedText").textContent=STR[l].intro;
+  const rb=document.getElementById("resetBtn");if(rb){rb.setAttribute("aria-label",STR[l].resetLabel);rb.setAttribute("title",STR[l].resetLabel);}
+  const pageTitle={en:"Prompt Engineer · Loria Space",ar:"مهندس البرومبت · فضاء لوريا",fr:"Ingénieur de prompt · Espace Loria",zh:"提示词工程师 · 洛里亚空间",hi:"प्रॉम्प्ट इंजीनियर · लोरिया स्पेस"}[l]||"Prompt Engineer · Loria Space";
+  try{document.title=pageTitle;}catch(e){}
+  applyThemeIcon();closePop();updateMeters();syncPreview();store.set("lp_lang_v2",l);
+}
+
+/* ===================== SMART FILL (الملء الذكي) ===================== */
+/* expert prompt template per request type — auto-fills the fields for ANY request */
+const TPL={
+ar:{
+ text:{role:"أنت كاتب ومحرّر محترف يجيد الصياغة الواضحة والجذّابة.",idea:"أريد نصاً مكتوباً جيّد التنظيم حول الموضوع الذي سأحدّده.",features:["بنية واضحة بعناوين ومقاطع","لغة سليمة وسلسة","أمثلة عند الحاجة","خاتمة تلخّص الفكرة"],languages:"العربية",audience:"قارئ عام",tone:["pro","simple"],result:"نص نهائي منسّق وجاهز للنشر، خالٍ من الأخطاء وواضح المعنى."},
+ academic:{role:"أنت باحث أكاديمي متخصص يكتب بأسلوب علمي رصين وبشري طبيعي.",idea:"أريد فقرة من بحث أكاديمي حول الموضوع الذي سأحدّده، مكتوبة بأسلوب علمي دقيق.",features:["أسلوب أكاديمي علمي رصين","حجّة منطقية مترابطة","دقة في المعلومة والمصطلح","لغة سليمة دون تشكيل"],languages:"العربية",audience:"لجنة علمية أو قارئ أكاديمي",tone:["formal","detailed"],chars:"مثال: 800–1000 حرف",result:"فقرة بحثية أكاديمية متماسكة، دقيقة وصحيحة، بأسلوب بشري طبيعي ودون تشكيل، جاهزة للإدراج في البحث."},
+ consult:{role:"أنت مستشار خبير متخصص في المجال المطروح، تقدّم تحليلاً دقيقاً وحلولاً عملية.",idea:"أريد استشارة متخصصة حول الموضوع الذي سأطرحه، مع توصيات واضحة.",features:["تحليل دقيق للوضع","خيارات متعددة مع إيجابياتها وسلبياتها","توصية نهائية واضحة","خطوات تنفيذية"],languages:"العربية",audience:"صاحب القرار",tone:["pro","detailed"],result:"استشارة منظّمة تنتهي بتوصية عملية قابلة للتطبيق فوراً."},
+ code:{role:"أنت مطوّر برمجيات خبير تكتب كوداً نظيفاً وفعّالاً وآمناً.",idea:"أريد كوداً برمجياً ينفّذ الوظيفة التي سأصفها بشكل كامل وقابل للتشغيل.",features:["كود نظيف ومنظّم","تعليقات توضيحية","معالجة الأخطاء","قابلية التوسّع والصيانة"],tech:["أفضل ممارسات الأمان","اختبار الحالات الحدّية"],languages:"حسب المشروع (مثلاً Python أو JavaScript)",audience:"مطوّرون",tone:["pro"],result:"كود كامل يعمل دون أخطاء، مع شرح موجز لكيفية تشغيله وتركيبه."},
+ service:{role:"أنت باحث دقيق تقدّم معلومات موثوقة ومحدّثة.",idea:"أريد معرفة أو خدمة دقيقة حول ما سأسأل عنه، بمعلومات صحيحة.",features:["معلومة دقيقة ومباشرة","مصادر موثوقة عند الحاجة","تنظيم واضح"],languages:"العربية",audience:"باحث عن معلومة",tone:["pro","concise"],result:"إجابة دقيقة موثوقة ومنظّمة تلبّي الحاجة مباشرة."},
+ image:{role:"أنت مصمم جرافيك محترف يصنع صوراً عالية الجودة وجذّابة بصرياً.",idea:"أريد صورة احترافية تعبّر عن الفكرة التي سأصفها.",features:["تكوين بصري متوازن","ألوان متناسقة","تفاصيل دقيقة","مظهر طبيعي واحترافي"],colors:"لوحة متناسقة (مثلاً أزرق سماوي + بنفسجي + لمسات بيضاء)",fonts:"خط واضح وأنيق إن وُجد نص",sizes:"1080×1080",languages:"العربية لأي نص داخل الصورة",audience:"الجمهور المستهدف بالصورة",tone:["creative","pro"],warnings:["تجنّب المظهر البلاستيكي","لا رموز أو حروف مشوّهة"],result:"صورة عالية الدقة جاهزة للاستخدام، احترافية وطبيعية المظهر."},
+ file:{role:"أنت مصمم مستندات محترف ينتج ملفات أنيقة ومنظّمة.",idea:"أريد ملفاً منسّقاً بشكل احترافي يحتوي المحتوى الذي سأحدّده.",features:["تنظيم واضح بعناوين","تنسيق أنيق ومتّسق","سهولة القراءة","جاهز للطباعة والمشاركة"],colors:"ألوان هادئة احترافية",fonts:"Tajawal",sizes:"A4",languages:"العربية",audience:"قارئ المستند",tone:["pro"],result:"ملف نهائي أنيق ومنسّق بدقة، جاهز للاستخدام مباشرة."},
+ video:{role:"أنت صانع فيديو محترف يصمّم محتوى مرئياً جذّاباً ومتقن الإيقاع.",idea:"أريد فيديو يعرض الفكرة التي سأصفها بأسلوب جذّاب.",features:["افتتاحية قوية","إيقاع متناسق","عناصر بصرية واضحة","خاتمة بنداء للفعل"],sizes:"1920×1080 (16:9)",languages:"العربية",audience:"مشاهد الفيديو",tone:["creative","marketing"],result:"فيديو متكامل عالي الجودة، واضح وجذّاب ومناسب للمنصّة المستهدفة."},
+ audio:{role:"أنت منتج صوتي محترف ينتج صوتاً واضحاً واحترافياً.",idea:"أريد محتوى صوتياً واضحاً حول ما سأحدّده.",features:["صوت نقي واضح","إيقاع مناسب","نبرة ملائمة"],languages:"العربية",audience:"المستمع",tone:["pro"],result:"ملف صوتي واضح واحترافي جاهز للاستخدام."},
+ convert:{role:"أنت متخصص في تحويل الصيغ مع الحفاظ على الجودة والتنسيق.",idea:"أريد تحويل المحتوى أو الملف من صيغته الحالية إلى الصيغة التي سأحدّدها.",features:["حفاظ على التنسيق الأصلي","دقة كاملة في النقل","جاهزية الناتج للاستخدام"],languages:"العربية",tone:["pro","concise"],result:"ملف محوّل بدقة مع الحفاظ على التنسيق والمحتوى، جاهز للاستخدام."},
+ trans:{role:"أنت مترجم محترف متخصص يترجم بدقّة وسلاسة مع مراعاة السياق.",idea:"أريد ترجمة احترافية للنص الذي سأرفقه، تحافظ على المعنى والنبرة.",features:["ترجمة دقيقة غير حرفية","حفظ النبرة والأسلوب","مراعاة المصطلحات المتخصصة"],languages:"من العربية إلى الفرنسية (عدّلها كما تريد)",audience:"قارئ اللغة الهدف",tone:["pro"],result:"ترجمة طبيعية دقيقة تحافظ على المعنى والنبرة الأصلية."},
+ dash:{role:"أنت مهندس واجهات وتطبيقات يبني لوحات تحكم عملية وأنيقة.",idea:"أريد لوحة تحكم لموقع أو تطبيق متخصص بالوظائف التي سأحدّدها.",features:["تسجيل دخول آمن","رسوم بيانية وإحصاءات","تصميم متجاوب","إدارة محتوى سهلة"],tech:["كود نظيف قابل للصيانة","حماية البيانات"],colors:"واجهة عصرية متناسقة",fonts:"خط واجهات واضح",languages:"العربية (RTL)",audience:"مدير اللوحة والمستخدمون",tone:["pro"],result:"لوحة تحكم وظيفية متجاوبة وأنيقة، جاهزة للتشغيل."},
+ auto:{role:"أنت مهندس أتمتة تبني سير عمل دقيقاً وموثوقاً.",idea:"أريد أتمتة سير العمل الذي سأصفه على شكل ملف JSON جاهز.",features:["محفّز واضح للبدء","خطوات مرتّبة منطقياً","معالجة الأخطاء","قابلية إعادة الاستخدام"],tech:["صيغة JSON صحيحة (n8n / Make)"],languages:"العربية للوصف",audience:"فريق التشغيل",tone:["pro","concise"],result:"ملف JSON صالح لسير عمل يعمل مباشرة بعد الاستيراد."},
+ fromfile:{role:"أنت محلّل دقيق يستخرج الإجابات من الملفات المرفقة بأمانة.",idea:"أريد إجابة دقيقة معتمدة على الملفات التي سأرفقها.",features:["إجابة مستندة إلى الملفات حصراً","دقة في الاقتباس والاستخلاص","تنظيم واضح"],languages:"العربية",audience:"صاحب الملفات",tone:["pro","detailed"],attachments:"yes",result:"إجابة دقيقة مبنية على محتوى الملفات المرفقة دون اختلاق."},
+ learn:{role:"أنت معلّم خبير ومرشد يبسّط المجالات المعقّدة بسرعة.",idea:"أريد إتقان أساسيات المجال الذي سأحدّده خلال وقت قصير.",features:["خريطة طريق متدرّجة","المفاهيم الأساسية مبسّطة","أمثلة عملية","تمارين قصيرة"],languages:"العربية",audience:"مبتدئ يريد التعلّم بسرعة",tone:["edu","simple"],result:"خطة تعلّم منظّمة تنقلك من الصفر إلى الأساسيات العملية بثقة."},
+ song:{role:"أنت كاتب أغانٍ وملحّن محترف تصوغ كلمات منسجمة ومؤثّرة.",idea:"أريد أغنية مخصّصة حول الموضوع أو الإحساس الذي سأحدّده.",features:["بنية واضحة (مقاطع + لازمة)","قافية وإيقاع منسجمان","صور شعرية مؤثّرة","انسجام مع الإحساس المطلوب"],languages:"العربية",audience:"المستمع المستهدف",tone:["creative"],result:"كلمات أغنية كاملة متماسكة مع وصف موجز للأسلوب الموسيقي المقترح."},
+ invent:{role:"أنت مبتكر ومخترع تطرح أفكاراً جديدة قابلة للتطبيق.",idea:"أريد ابتكار حلّ أو منتج جديد للمشكلة أو الحاجة التي سأصفها.",features:["تحديد المشكلة بدقة","فكرة مبتكرة وأصلية","شرح آلية العمل","تقييم الجدوى والخطوات التالية"],languages:"العربية",audience:"الجهة المستفيدة من الابتكار",tone:["creative","detailed"],result:"مفهوم ابتكاري متكامل وواضح مع آلية عمله وإمكانية تطبيقه."},
+ other:{role:"أنت محترف متخصص في المجال المطلوب بالضبط.",idea:"أريد إنجاز ما سأصفه بإتقان واحترافية.",features:["إتقان كامل للمطلوب","جودة عالية في التفاصيل","تنظيم واضح"],languages:"العربية",audience:"الجمهور المستهدف",tone:["pro"],result:"مخرَج نهائي احترافي عالي الجودة يلبّي المطلوب بدقة."}
+},
+fr:{
+ text:{role:"Vous êtes un rédacteur et éditeur professionnel à l'écriture claire et engageante.",idea:"Je veux un texte bien structuré sur le sujet que je préciserai.",features:["Structure claire avec titres","Langue correcte et fluide","Exemples si besoin","Conclusion synthétique"],languages:"Français",audience:"Lecteur grand public",tone:["pro","simple"],result:"Texte final mis en forme, prêt à publier, sans fautes et clair."},
+ academic:{role:"Vous êtes un chercheur académique spécialisé écrivant dans un style scientifique rigoureux et naturellement humain.",idea:"Je veux un paragraphe de recherche académique sur le sujet que je préciserai, rédigé avec précision scientifique.",features:["Style académique rigoureux","Argumentation logique et cohérente","Précision de l'information et des termes","Langue correcte sans vocalisation"],languages:"Français",audience:"Comité scientifique ou lecteur académique",tone:["formal","detailed"],chars:"Ex. : 800–1000 caractères",result:"Paragraphe de recherche académique cohérent, exact et correct, au style humain naturel et sans vocalisation, prêt à insérer dans le travail."},
+ consult:{role:"Vous êtes un consultant expert du domaine, offrant une analyse précise et des solutions concrètes.",idea:"Je veux une consultation spécialisée sur mon sujet, avec des recommandations claires.",features:["Analyse précise de la situation","Options avec avantages et inconvénients","Recommandation finale claire","Étapes d'exécution"],languages:"Français",audience:"Décideur",tone:["pro","detailed"],result:"Consultation structurée se terminant par une recommandation directement applicable."},
+ code:{role:"Vous êtes un développeur expert écrivant un code propre, efficace et sûr.",idea:"Je veux un code qui réalise la fonction décrite, complet et exécutable.",features:["Code propre et organisé","Commentaires explicatifs","Gestion des erreurs","Évolutivité et maintenabilité"],tech:["Bonnes pratiques de sécurité","Test des cas limites"],languages:"Selon le projet (ex. Python ou JavaScript)",audience:"Développeurs",tone:["pro"],result:"Code complet sans erreurs, avec une brève explication de l'exécution et de l'installation."},
+ service:{role:"Vous êtes un chercheur rigoureux fournissant des informations fiables et à jour.",idea:"Je veux une information ou un service précis sur ma question, exact et fiable.",features:["Information précise et directe","Sources fiables si besoin","Organisation claire"],languages:"Français",audience:"Personne cherchant une information",tone:["pro","concise"],result:"Réponse précise, fiable et organisée répondant directement au besoin."},
+ image:{role:"Vous êtes un graphiste professionnel créant des images de haute qualité et visuellement attractives.",idea:"Je veux une image professionnelle illustrant l'idée que je décrirai.",features:["Composition équilibrée","Couleurs harmonieuses","Détails soignés","Rendu naturel et professionnel"],colors:"Palette harmonieuse (ex. cyan + violet + touches blanches)",fonts:"Police claire et élégante si texte",sizes:"1080×1080",languages:"Français pour tout texte dans l'image",audience:"Public visé par l'image",tone:["creative","pro"],warnings:["Éviter l'aspect plastique","Pas de symboles ni lettres déformés"],result:"Image haute résolution prête à l'emploi, professionnelle et d'aspect naturel."},
+ file:{role:"Vous êtes un concepteur de documents professionnel produisant des fichiers élégants et organisés.",idea:"Je veux un fichier mis en forme professionnellement contenant le contenu que je préciserai.",features:["Organisation claire avec titres","Mise en forme élégante et cohérente","Lisibilité","Prêt à imprimer et partager"],colors:"Couleurs sobres et professionnelles",fonts:"Tajawal",sizes:"A4",languages:"Français",audience:"Lecteur du document",tone:["pro"],result:"Fichier final élégant et soigné, prêt à l'emploi."},
+ video:{role:"Vous êtes un créateur vidéo professionnel au rythme maîtrisé.",idea:"Je veux une vidéo présentant mon idée de façon attractive.",features:["Accroche forte","Rythme cohérent","Éléments visuels clairs","Conclusion avec appel à l'action"],sizes:"1920×1080 (16:9)",languages:"Français",audience:"Spectateur",tone:["creative","marketing"],result:"Vidéo complète de haute qualité, claire et attractive, adaptée à la plateforme."},
+ audio:{role:"Vous êtes un producteur audio professionnel.",idea:"Je veux un contenu audio clair sur ce que je préciserai.",features:["Son net et clair","Rythme adapté","Ton approprié"],languages:"Français",audience:"Auditeur",tone:["pro"],result:"Fichier audio clair et professionnel prêt à l'emploi."},
+ convert:{role:"Vous êtes spécialiste de la conversion de formats en préservant qualité et mise en forme.",idea:"Je veux convertir le contenu ou le fichier de son format actuel vers le format que j'indiquerai.",features:["Préservation de la mise en forme","Précision totale du transfert","Résultat prêt à l'emploi"],languages:"Français",tone:["pro","concise"],result:"Fichier converti fidèlement, mise en forme et contenu préservés, prêt à l'emploi."},
+ trans:{role:"Vous êtes un traducteur professionnel spécialisé, précis et fluide.",idea:"Je veux une traduction professionnelle du texte que je joindrai, fidèle au sens et au ton.",features:["Traduction fidèle non littérale","Respect du ton et du style","Terminologie spécialisée"],languages:"De l'arabe vers le français (à ajuster)",audience:"Lecteur de la langue cible",tone:["pro"],result:"Traduction naturelle et précise préservant le sens et le ton d'origine."},
+ dash:{role:"Vous êtes un ingénieur d'interfaces construisant des tableaux de bord pratiques et élégants.",idea:"Je veux un tableau de bord avec les fonctions que j'indiquerai.",features:["Connexion sécurisée","Graphiques et statistiques","Design responsive","Gestion de contenu facile"],tech:["Code propre et maintenable","Protection des données"],colors:"Interface moderne et cohérente",fonts:"Police d'interface claire",languages:"Français",audience:"Administrateur et utilisateurs",tone:["pro"],result:"Tableau de bord fonctionnel, responsive et élégant, prêt à l'emploi."},
+ auto:{role:"Vous êtes un ingénieur en automatisation créant des flux fiables et précis.",idea:"Je veux automatiser le flux que je décrirai sous forme de fichier JSON prêt.",features:["Déclencheur clair","Étapes ordonnées logiquement","Gestion des erreurs","Réutilisabilité"],tech:["Format JSON valide (n8n / Make)"],languages:"Français pour la description",audience:"Équipe d'exploitation",tone:["pro","concise"],result:"Fichier JSON valide pour un flux fonctionnel dès l'import."},
+ fromfile:{role:"Vous êtes un analyste rigoureux qui extrait fidèlement les réponses des fichiers joints.",idea:"Je veux une réponse précise basée sur les fichiers que je joindrai.",features:["Réponse basée uniquement sur les fichiers","Précision des citations et extractions","Organisation claire"],languages:"Français",audience:"Propriétaire des fichiers",tone:["pro","detailed"],attachments:"yes",result:"Réponse précise fondée sur le contenu des fichiers joints, sans invention."},
+ learn:{role:"Vous êtes un enseignant expert et mentor qui simplifie rapidement les domaines complexes.",idea:"Je veux maîtriser les bases du domaine que j'indiquerai en peu de temps.",features:["Feuille de route progressive","Concepts clés simplifiés","Exemples concrets","Exercices courts"],languages:"Français",audience:"Débutant souhaitant apprendre vite",tone:["edu","simple"],result:"Plan d'apprentissage structuré menant de zéro aux bases pratiques avec assurance."},
+ song:{role:"Vous êtes un parolier et compositeur professionnel aux paroles harmonieuses et touchantes.",idea:"Je veux une chanson personnalisée sur le thème ou l'émotion que j'indiquerai.",features:["Structure claire (couplets + refrain)","Rime et rythme harmonieux","Images poétiques fortes","Cohérence avec l'émotion voulue"],languages:"Français",audience:"Auditeur visé",tone:["creative"],result:"Paroles complètes et cohérentes avec une brève description du style musical proposé."},
+ invent:{role:"Vous êtes un innovateur proposant des idées nouvelles et applicables.",idea:"Je veux inventer une solution ou un produit pour le problème ou le besoin que je décrirai.",features:["Définition précise du problème","Idée originale et innovante","Explication du fonctionnement","Évaluation de la faisabilité et étapes suivantes"],languages:"Français",audience:"Bénéficiaire de l'innovation",tone:["creative","detailed"],result:"Concept d'innovation complet et clair, avec son fonctionnement et sa faisabilité."},
+ other:{role:"Vous êtes un professionnel spécialiste du domaine exact demandé.",idea:"Je veux réaliser ce que je décrirai avec maîtrise et professionnalisme.",features:["Maîtrise complète du besoin","Haute qualité des détails","Organisation claire"],languages:"Français",audience:"Public visé",tone:["pro"],result:"Livrable final professionnel de haute qualité répondant précisément au besoin."}
+}
+};
+
+function upgradeLanguages(){
+  Object.assign(STR, {"en": {"intro": "As an artificial intelligence system, follow the steps in this file and provide exactly what I ask for, with no additions or omissions, while respecting the following requirements:", "wantLabel": "What I want to create:", "detailsHeader": "Request details:", "rulesHeader": "Mandatory rules applied to this request and every output:", "yes": "Yes", "no": "No", "attachNote": "I will attach files to this request; analyze them with high precision and use them fully in the requested work.", "refLabel": "Previous model or reference: review the link or attachment carefully and use it for inspiration without copying:", "secretLabel": "Keys or codes to integrate:", "secretNote": "Integrate the previous content in the correct place exactly as provided, without changing it or revealing it outside its intended location.", "addText": "Add", "delLabel": "Delete", "docTitleFallback": "Request for artificial intelligence", "docTag": "Artificial intelligence prompt brief", "colStage": "Stage", "colDetail": "Details", "tCopy": "Prompt copied ✓", "tEmpty": "Add some details first ◆", "copied": "Copied ✓", "tPdf": "Preparing document…", "tPdfOk": "Document downloaded ✓", "tDocx": "Preparing editable file…", "tDocxOk": "Editable file downloaded ✓", "tLibPdf": "The document library could not load. Check your connection.", "tLibDocx": "The editable file library could not load. Check your connection.", "tPrintHint": "The print window will open. Choose the save as document option, then save.", "tEx": "Example loaded. Edit it as you wish ✦", "tFillOk": "Smart Fill completed. Review the fields and edit as needed ✦", "tPickType": "Choose your request type first, then press Smart Fill ◆", "resetLabel": "Clear memory", "resetConfirm": "Do you want to clear all fields and saved memory, then start again?", "tReset": "Memory cleared. New start ✓", "themeToLight": "Day mode", "themeToDark": "Night mode", "mLow": "Add the idea and expected result for a better output.", "mMid": "Good. Add the audience and tone for more precision.", "mHigh": "Excellent. Clear and complete prompt!", "helpLabel": "Help", "fileNameDefault": "prompt"}, "zh": {"intro": "作为人工智能系统，请按照本文件中的步骤执行，准确提供我要求的内容，不增加、不删除，并遵守以下要求：", "wantLabel": "我想创建：", "detailsHeader": "请求详情：", "rulesHeader": "适用于本请求和所有输出的强制规则：", "yes": "是", "no": "否", "attachNote": "我会为此请求附加文件；请高精度分析，并完整用于所需成果。", "refLabel": "先前模型或参考：请仔细查看链接或附件，并在不复制的情况下借鉴：", "secretLabel": "需要整合的密钥或代码：", "secretNote": "请将以上内容按原样放入结果中的正确位置，不要修改，也不要在目标位置以外泄露。", "addText": "添加", "delLabel": "删除", "docTitleFallback": "人工智能请求", "docTag": "人工智能提示词简报", "colStage": "阶段", "colDetail": "详情", "tCopy": "提示词已复制 ✓", "tEmpty": "请先添加一些详情 ◆", "copied": "已复制 ✓", "tPdf": "正在准备文档…", "tPdfOk": "文档已下载 ✓", "tDocx": "正在准备可编辑文件…", "tDocxOk": "可编辑文件已下载 ✓", "tLibPdf": "文档库加载失败。请检查连接。", "tLibDocx": "可编辑文件库加载失败。请检查连接。", "tPrintHint": "打印窗口将打开。请选择保存为文档，然后保存。", "tEx": "示例已载入，可按需修改 ✦", "tFillOk": "智能填写已完成。请检查字段并按需修改 ✦", "tPickType": "请先选择请求类型，然后点击智能填写 ◆", "resetLabel": "清除记忆", "resetConfirm": "是否清除所有字段和已保存记忆，然后重新开始？", "tReset": "记忆已清除，重新开始 ✓", "themeToLight": "日间模式", "themeToDark": "夜间模式", "mLow": "添加想法和预期结果，可获得更好的输出。", "mMid": "不错。添加受众和语气，可提高精度。", "mHigh": "很好。提示词清晰完整！", "helpLabel": "帮助", "fileNameDefault": "提示词"}, "hi": {"intro": "कृत्रिम बुद्धिमत्ता प्रणाली के रूप में, इस फ़ाइल में दिए गए चरणों का पालन करें और मुझे वही दें जो मैं माँग रहा हूँ, बिना किसी जोड़ या कमी के, तथा निम्न आवश्यकताओं का पालन करें:", "wantLabel": "मैं क्या बनाना चाहता हूँ:", "detailsHeader": "अनुरोध विवरण:", "rulesHeader": "इस अनुरोध और हर परिणाम पर लागू अनिवार्य नियम:", "yes": "हाँ", "no": "नहीं", "attachNote": "मैं इस अनुरोध के साथ फ़ाइलें जोड़ूँगा; उन्हें बहुत ध्यान से विश्लेषित करें और आवश्यक कार्य में पूरी तरह उपयोग करें।", "refLabel": "पिछला नमूना या संदर्भ: लिंक या संलग्न फ़ाइल को ध्यान से देखें और बिना नकल किए उससे प्रेरणा लें:", "secretLabel": "जोड़ने योग्य कुंजियाँ या कोड:", "secretNote": "ऊपर दी गई सामग्री को सही स्थान पर ठीक उसी रूप में जोड़ें, बिना बदलें और उसके स्थान के बाहर न दिखाएँ।", "addText": "जोड़ें", "delLabel": "हटाएँ", "docTitleFallback": "कृत्रिम बुद्धिमत्ता के लिए अनुरोध", "docTag": "कृत्रिम बुद्धिमत्ता प्रॉम्प्ट संक्षेप", "colStage": "चरण", "colDetail": "विवरण", "tCopy": "प्रॉम्प्ट कॉपी हो गया ✓", "tEmpty": "पहले कुछ विवरण जोड़ें ◆", "copied": "कॉपी हो गया ✓", "tPdf": "दस्तावेज़ तैयार हो रहा है…", "tPdfOk": "दस्तावेज़ डाउनलोड हो गया ✓", "tDocx": "संपादन योग्य फ़ाइल तैयार हो रही है…", "tDocxOk": "संपादन योग्य फ़ाइल डाउनलोड हो गई ✓", "tLibPdf": "दस्तावेज़ पुस्तकालय लोड नहीं हुआ। अपना कनेक्शन जाँचें।", "tLibDocx": "संपादन योग्य फ़ाइल पुस्तकालय लोड नहीं हुआ। अपना कनेक्शन जाँचें।", "tPrintHint": "मुद्रण विंडो खुलेगी। दस्तावेज़ के रूप में सहेजें विकल्प चुनें, फिर सहेजें।", "tEx": "उदाहरण लोड हो गया। आवश्यकतानुसार संपादित करें ✦", "tFillOk": "स्मार्ट भराई पूरी हुई। खाने जाँचें और आवश्यकतानुसार बदलें ✦", "tPickType": "पहले अनुरोध का प्रकार चुनें, फिर स्मार्ट भरें दबाएँ ◆", "resetLabel": "स्मृति साफ़ करें", "resetConfirm": "क्या आप सभी खाने और सहेजी गई स्मृति मिटाकर फिर से शुरू करना चाहते हैं?", "tReset": "स्मृति साफ़ हुई। नई शुरुआत ✓", "themeToLight": "दिन मोड", "themeToDark": "रात मोड", "mLow": "बेहतर परिणाम के लिए विचार और अपेक्षित परिणाम जोड़ें।", "mMid": "अच्छा। अधिक सटीकता के लिए दर्शक और शैली जोड़ें।", "mHigh": "उत्कृष्ट। स्पष्ट और पूरा प्रॉम्प्ट!", "helpLabel": "सहायता", "fileNameDefault": "प्रॉम्प्ट"}});
+  Object.assign(INFO.choices, {en:"Click what you want the AI to create. You can choose more than one card. Example: image plus text? Turn on both.", zh:"点击你希望人工智能完成的内容。可以同时选择多个卡片。例如：图像加文本？两个都选。", hi:"कृत्रिम बुद्धिमत्ता से जो बनवाना है उस पर क्लिक करें। आप एक से अधिक कार्ड चुन सकते हैं। उदाहरण: छवि और पाठ चाहिए? दोनों चालू करें।"});
+  const choiceExtra={"text": {"en": "Simple text", "zh": "普通文本", "hi": "साधारण पाठ"}, "academic": {"en": "Academic research paragraph", "zh": "学术研究段落", "hi": "शैक्षणिक शोध अनुच्छेद"}, "consult": {"en": "Specialized consultation", "zh": "专业咨询", "hi": "विशेषज्ञ परामर्श"}, "code": {"en": "Programming code", "zh": "编程代码", "hi": "प्रोग्रामिंग कोड"}, "service": {"en": "Service or information", "zh": "服务或信息", "hi": "सेवा या जानकारी"}, "image": {"en": "Image", "zh": "图像", "hi": "छवि"}, "file": {"en": "File or document", "zh": "文件或文档", "hi": "फ़ाइल या दस्तावेज़"}, "video": {"en": "Video", "zh": "视频", "hi": "वीडियो"}, "audio": {"en": "Audio", "zh": "音频", "hi": "ऑडियो"}, "convert": {"en": "Convert one format to another", "zh": "格式转换", "hi": "एक प्रारूप को दूसरे में बदलना"}, "trans": {"en": "Professional specialized translation", "zh": "专业翻译", "hi": "विशेषज्ञ अनुवाद"}, "dash": {"en": "Dashboard for a specialized site", "zh": "专业网站仪表板", "hi": "विशेष वेबसाइट के लिए डैशबोर्ड"}, "auto": {"en": "Workflow automation file", "zh": "工作流自动化文件", "hi": "कार्यप्रवाह स्वचालन फ़ाइल"}, "fromfile": {"en": "Answer from attached files", "zh": "根据附件回答", "hi": "संलग्न फ़ाइलों से उत्तर"}, "learn": {"en": "Learn a new field in one hour", "zh": "一小时学习新领域", "hi": "एक घंटे में नया क्षेत्र सीखें"}, "song": {"en": "Custom song", "zh": "定制歌曲", "hi": "निजी गीत"}, "invent": {"en": "Invent something", "zh": "发明某物", "hi": "कुछ नया आविष्कार करें"}, "other": {"en": "Other custom request", "zh": "其他定制请求", "hi": "अन्य निजी अनुरोध"}};
+  CHOICES.forEach(c=>Object.assign(c, choiceExtra[c.id]||{}));
+  const fieldExtra={"idea": {"en": "Idea", "zh": "想法", "hi": "विचार", "phEn": "Explain your idea clearly and briefly...", "phZh": "清楚简要地说明你的想法…", "phHi": "अपना विचार साफ़ और संक्षेप में समझाएँ...", "infoEn": "What exactly do you want? Write the thing in your mind using simple words. Example: I want an app that reminds me to drink water, or an article about sport benefits. Do not overthink it; write the idea as it comes.", "infoZh": "你到底想要什么？用简单的话写下脑中的内容。例：我想要一个提醒喝水的应用，或一篇关于运动好处的文章。不用想太多，直接写想法。", "infoHi": "आप वास्तव में क्या चाहते हैं? सरल शब्दों में मन की बात लिखें। उदाहरण: मुझे पानी पीने की याद दिलाने वाला ऐप चाहिए, या खेल के लाभों पर लेख। ज़्यादा मत सोचिए; विचार जैसा आए वैसा लिखिए।"}, "role": {"en": "Role", "zh": "角色", "hi": "भूमिका", "phEn": "Example: Act as a specialized expert in...", "phZh": "例如：请作为……方面的专家", "phHi": "उदाहरण: ... के विशेषज्ञ की तरह काम करें", "infoEn": "Tell the AI what role to take. When you make it an expert, the result improves. Examples: professional designer, history teacher, doctor.", "infoZh": "告诉人工智能要扮演什么角色。让它成为专家时，结果会更好。例：专业设计师、历史老师、医生。", "infoHi": "कृत्रिम बुद्धिमत्ता को बताइए कि वह कौन सी भूमिका निभाए। विशेषज्ञ भूमिका देने से परिणाम बेहतर होता है। उदाहरण: पेशेवर डिज़ाइनर, इतिहास शिक्षक, डॉक्टर।"}, "title": {"en": "Project name or title", "zh": "项目名称或标题", "hi": "परियोजना नाम या शीर्षक", "phEn": "A clear project title", "phZh": "清晰的项目标题", "phHi": "स्पष्ट परियोजना शीर्षक", "infoEn": "What name do you want for your work? Like a book title or app name. Leave it empty if you do not have one.", "infoZh": "你想给作品取什么名字？可以像书名或应用名。没有就留空。", "infoHi": "आप अपने काम का क्या नाम रखना चाहते हैं? जैसे पुस्तक का शीर्षक या ऐप का नाम। न हो तो खाली छोड़ दें।"}, "features": {"en": "Features", "zh": "功能特点", "hi": "विशेषताएँ", "phEn": "Write one feature...", "phZh": "写一个功能…", "phHi": "एक विशेषता लिखें...", "infoEn": "What should the work contain? Add each feature with the plus button. For an app: sign-in button, notifications, night mode.", "infoZh": "作品应该包含什么？用加号逐条添加。应用示例：登录按钮、通知、夜间模式。", "infoHi": "काम में क्या होना चाहिए? हर विशेषता जोड़ने के लिए जोड़ें बटन दबाएँ। ऐप के लिए: प्रवेश बटन, सूचनाएँ, रात मोड।"}, "design": {"en": "Design", "zh": "设计", "hi": "डिज़ाइन"}, "colors": {"en": "Color codes", "zh": "颜色代码", "hi": "रंग संकेत", "phEn": "Example: sky blue, violet, pink", "phZh": "例如：天蓝色、紫色、粉色", "phHi": "उदाहरण: आसमानी नीला, बैंगनी, गुलाबी", "infoEn": "What colors do you like? Write color names or codes if you know them. If not, write names only.", "infoZh": "你喜欢什么颜色？可以写颜色名称，知道代码也可以写。不知道就只写名称。", "infoHi": "आपको कौन से रंग पसंद हैं? रंगों के नाम लिखें या संकेत पता हो तो वह लिखें। न पता हो तो केवल नाम लिखें।"}, "fonts": {"en": "Fonts", "zh": "字体", "hi": "फ़ॉन्ट", "phEn": "Example: a clear modern font", "phZh": "例如：清晰现代字体", "phHi": "उदाहरण: साफ़ आधुनिक फ़ॉन्ट", "infoEn": "The style of letters. If you have a preferred font, write it; otherwise leave it empty and the AI will choose a suitable one.", "infoZh": "文字的样式。若有喜欢的字体就写下；没有就留空，人工智能会选择合适字体。", "infoHi": "अक्षरों की शैली। पसंदीदा फ़ॉन्ट हो तो लिखें; नहीं तो खाली छोड़ दें, कृत्रिम बुद्धिमत्ता उपयुक्त फ़ॉन्ट चुनेगी।"}, "sizes": {"en": "Size", "zh": "尺寸", "hi": "आकार", "phEn": "Example: square, wide, vertical", "phZh": "例如：方形、宽屏、竖版", "phHi": "उदाहरण: वर्गाकार, चौड़ा, लंबवत", "infoEn": "For an image or video, what size do you need? Example: square for social media, wide for video, vertical for stories.", "infoZh": "如果是图像或视频，需要什么尺寸？例：社交平台方形、视频宽屏、故事竖版。", "infoHi": "छवि या वीडियो के लिए कौन सा आकार चाहिए? उदाहरण: सामाजिक माध्यम के लिए वर्गाकार, वीडियो के लिए चौड़ा, कहानी के लिए लंबवत।"}, "languages": {"en": "Languages", "zh": "语言", "hi": "भाषाएँ", "phEn": "Example: English only", "phZh": "例如：仅简体中文", "phHi": "उदाहरण: केवल हिन्दी", "infoEn": "What language do you want for the result? Example: English only, or two languages together.", "infoZh": "你想让结果使用什么语言？例：仅简体中文，或两种语言一起。", "infoHi": "आप परिणाम किस भाषा में चाहते हैं? उदाहरण: केवल हिन्दी, या दो भाषाएँ साथ में।"}, "warnings": {"en": "Custom warnings", "zh": "自定义注意事项", "hi": "विशेष सावधानियाँ", "phEn": "Write a specific warning...", "phZh": "写一条特殊注意事项…", "phHi": "एक विशेष सावधानी लिखें...", "infoEn": "Things you want the AI to avoid. Example: do not use difficult words, avoid red. Add each warning with the plus button.", "infoZh": "希望人工智能避免的事项。例：不要用难词，避免红色。用加号逐条添加。", "infoHi": "वे बातें जिनसे कृत्रिम बुद्धिमत्ता बचे। उदाहरण: कठिन शब्द न प्रयोग करे, लाल रंग से बचे। हर सावधानी जोड़ें बटन से जोड़ें।"}, "audience": {"en": "Target audience", "zh": "目标受众", "hi": "लक्षित दर्शक", "phEn": "Who will use or read this?", "phZh": "谁会使用或阅读？", "phHi": "इसे कौन पढ़ेगा या उपयोग करेगा?", "infoEn": "Who is this work for? This helps the AI adjust the style. Examples: children, university students, business owners.", "infoZh": "这个作品是给谁的？这能帮助人工智能调整风格。例：儿童、大学生、企业主。", "infoHi": "यह काम किसके लिए है? इससे कृत्रिम बुद्धिमत्ता शैली ठीक करती है। उदाहरण: बच्चे, विश्वविद्यालय छात्र, व्यवसायी।"}, "tone": {"en": "Tone and style", "zh": "语气与风格", "hi": "लहजा और शैली", "infoEn": "What feeling should the result have? Choose one or more. Example: educational and simple for children, or professional and marketing for an ad.", "infoZh": "结果应有什么感觉？可选择一个或多个。例：儿童内容用教育性和简单，广告用专业和营销。", "infoHi": "परिणाम में कौन सा भाव चाहिए? एक या अधिक चुनें। उदाहरण: बच्चों के लिए शिक्षात्मक और सरल, विज्ञापन के लिए पेशेवर और विपणन।"}, "attachments": {"en": "Attachments", "zh": "附件", "hi": "संलग्नक", "infoEn": "Will you attach files such as an image, document, or logo? Choose Yes and the AI will be instructed to read and use them carefully.", "infoZh": "你会附加图像、文档或标志等文件吗？选择“是”，人工智能会被要求仔细读取并使用。", "infoHi": "क्या आप छवि, दस्तावेज़ या लोगो जैसी फ़ाइलें जोड़ेंगे? हाँ चुनें ताकि कृत्रिम बुद्धिमत्ता उन्हें ध्यान से पढ़े और उपयोग करे।"}, "tech": {"en": "Required technique", "zh": "必用技术", "hi": "अनिवार्य तकनीक", "phEn": "Example: use text extraction from images", "phZh": "例如：使用图像文字提取", "phHi": "उदाहरण: छवि से पाठ निकालना उपयोग करें", "infoEn": "Do you want the AI to use a specific technique? If you do not know, leave it empty.", "infoZh": "你想让人工智能使用某种技术吗？不知道就留空。", "infoHi": "क्या आप चाहते हैं कि कृत्रिम बुद्धिमत्ता कोई विशेष तकनीक उपयोग करे? न जानते हों तो खाली छोड़ दें।"}, "count": {"en": "Quantity", "zh": "数量", "hi": "संख्या", "phEn": "Example: five pages, ten questions", "phZh": "例如：五页、十个问题", "phHi": "उदाहरण: पाँच पृष्ठ, दस प्रश्न", "infoEn": "How many do you want? Example: five pages, ten questions, three images. Write the number and the item.", "infoZh": "你需要多少？例：五页、十个问题、三张图。写出数量和对象。", "infoHi": "आप कितने चाहते हैं? उदाहरण: पाँच पृष्ठ, दस प्रश्न, तीन छवियाँ। संख्या और वस्तु लिखें।"}, "chars": {"en": "Character count", "zh": "字符数量", "hi": "वर्ण संख्या", "phEn": "Example: five hundred characters", "phZh": "例如：五百字", "phHi": "उदाहरण: पाँच सौ वर्ण", "infoEn": "Do you want the text to have a specific length? Write a number or range. Useful for academic writing. Leave empty if not needed.", "infoZh": "你希望文本有固定长度吗？写数量或范围。对学术写作很有用。不需要就留空。", "infoHi": "क्या पाठ की लंबाई तय चाहिए? संख्या या सीमा लिखें। शैक्षणिक लेखन में उपयोगी। ज़रूरत न हो तो खाली छोड़ दें।"}, "reference": {"en": "Previous model or reference", "zh": "先前模型或参考", "hi": "पिछला नमूना या संदर्भ", "phEn": "Add a link or describe the reference...", "phZh": "添加链接或描述参考…", "phHi": "लिंक जोड़ें या संदर्भ का वर्णन करें...", "infoEn": "If you saw an example you like, add its link or describe the file you will attach. The AI should learn from it without copying.", "infoZh": "如果你看到了喜欢的示例，请添加链接或描述要附加的文件。人工智能应借鉴而不复制。", "infoHi": "यदि आपने कोई पसंदीदा उदाहरण देखा है, तो उसका लिंक जोड़ें या संलग्न फ़ाइल का वर्णन करें। कृत्रिम बुद्धिमत्ता उससे प्रेरणा ले, नकल न करे।"}, "secret": {"en": "Keys or codes to integrate", "zh": "需要整合的密钥或代码", "hi": "जोड़ने योग्य कुंजियाँ या कोड", "phEn": "Paste a private key, token, secret code, or code snippet here...", "phZh": "在此粘贴私钥、令牌、秘密代码或代码片段…", "phHi": "यहाँ निजी कुंजी, टोकन, गुप्त कोड या कोड अंश चिपकाएँ...", "infoEn": "If you have a private key, token, secret code, or code snippet that the AI must place correctly, paste it here. It stays in your browser and only appears inside your generated prompt.", "infoZh": "如果你有需要人工智能放到正确位置的私钥、令牌、秘密代码或代码片段，请粘贴在此。它只保留在浏览器中，并仅出现在生成的提示词内。", "infoHi": "यदि आपके पास निजी कुंजी, टोकन, गुप्त कोड या कोड अंश है जिसे कृत्रिम बुद्धिमत्ता को सही जगह रखना है, तो उसे यहाँ चिपकाएँ। यह आपके ब्राउज़र में रहता है और केवल बने प्रॉम्प्ट में दिखाई देता है।"}, "extra": {"en": "Other additions", "zh": "其他补充", "hi": "अन्य जोड़", "phEn": "Any extra details...", "phZh": "任何附加细节…", "phHi": "कोई अतिरिक्त विवरण...", "infoEn": "Write freely anything that does not fit in the previous fields.", "infoZh": "任何无法放入前面字段的内容，都可以自由写在这里。", "infoHi": "जो बात पिछले खानों में नहीं आती, उसे यहाँ स्वतंत्र रूप से लिखें।"}, "result": {"en": "Expected result", "zh": "预期结果", "hi": "अपेक्षित परिणाम", "phEn": "Describe the final result precisely...", "phZh": "准确描述最终结果…", "phHi": "अंतिम परिणाम को स्पष्ट रूप से लिखें...", "infoEn": "Describe the final result you want. The more precise you are, the closer the AI will get to your goal.", "infoZh": "描述你想要的最终结果。越准确，人工智能越接近你的目标。", "infoHi": "जिस अंतिम परिणाम को आप चाहते हैं, उसका वर्णन करें। जितना स्पष्ट लिखेंगे, कृत्रिम बुद्धिमत्ता उतना करीब पहुँचेगी।"}};
+  FIELDS.forEach(f=>{
+    if(fieldExtra[f.id])Object.assign(f,fieldExtra[f.id]);
+    if(f.children)f.children.forEach(ch=>{if(fieldExtra[ch.id])Object.assign(ch,fieldExtra[ch.id]);});
+    if(f.options){const toneExtra={"pro": {"en": "Professional", "zh": "专业", "hi": "पेशेवर"}, "friendly": {"en": "Friendly", "zh": "友好", "hi": "मित्रवत"}, "formal": {"en": "Formal", "zh": "正式", "hi": "औपचारिक"}, "marketing": {"en": "Marketing", "zh": "营销", "hi": "विपणन"}, "edu": {"en": "Educational", "zh": "教育性", "hi": "शिक्षात्मक"}, "creative": {"en": "Creative", "zh": "创意", "hi": "रचनात्मक"}, "concise": {"en": "Concise", "zh": "简洁", "hi": "संक्षिप्त"}, "detailed": {"en": "Detailed", "zh": "详细", "hi": "विस्तृत"}, "simple": {"en": "Simple", "zh": "简单", "hi": "सरल"}};f.options.forEach(o=>{if(toneExtra[o.id])Object.assign(o,toneExtra[o.id]);});}
+  });
+  const ruleEn=["No flattery.", "No lying.", "No hallucination.", "No invention.", "All information and deliverables must be accurate, meet expectations, exceed them when possible, and contain no errors.", "If any requirement is vague or incomplete, choose the most professional and logical interpretation that serves the goal and proceed.", "Formulate everything clearly so the AI understands it and meets the requirements precisely.", "No repetition, generic talk, or superficial output.", "When you do not know something, research specialized sources, learn it, then answer with high competence.", "Use the strongest available model or mode for this request.", "When creating an image, video, or media output, make it natural and professional, not obviously AI-generated.", "Always respect right-to-left direction for Arabic and left-to-right direction for other languages, with correct alignment and polished formatting.", "When inserting a file or logo, use it as provided without distortion or unauthorized changes.", "Apply the user requirements naturally inside the final product without quoting or repeating them literally.", "Provide the complete output without shortening, deleting, or summarizing, even if it is long; continue until fully complete.", "Deliver the result directly in its appropriate format and environment, without empty introductions or unnecessary closing offers.", "For programming projects, rely on free and open-source resources, and research specialized platforms according to the field.", "If the user provides private keys or secret project data, integrate them in the correct place; if missing, indicate where they must be added.", "Act as a professional specialist in the exact requested field.", "Before execution, review strong similar examples, take inspiration without copying, then provide something better.", "Before delivery, review the result against every requirement above and fix any error, conflict, or omission.", "For translation, preserve meaning, tone, and context; avoid literal translation and respect specialized terminology.", "For teaching, structure the content as a clear progressive path with practical examples, short exercises, and common mistakes to avoid.", "For songs, use a coherent structure with verses, chorus, and bridge, with rhyme and rhythm matching the desired feeling.", "Write academic paragraphs in a rigorous, methodical, linguistically correct style with accurate information and direct relevance to the user's topic.", "Make the writing fully human and natural, not AI-like, with no unnecessary vocalization or decorative marks.", "Do not answer just to answer; provide what truly serves the user and what they actually need."], ruleZh=["禁止奉承。", "禁止说谎。", "禁止幻觉。", "禁止编造。", "所有信息和成果都必须准确，满足并尽量超过预期，高效且无错误。", "如果任何要求含糊或不完整，请选择最专业、最合乎逻辑且服务目标的解释，并继续执行。", "请清晰表达所有内容，让人工智能明确理解并精准满足要求。", "禁止重复、空泛或肤浅表达。", "如果不了解某事，请查找专业来源并学习后，再高质量回答。", "请使用可用的最高模型或最佳模式执行本请求。", "创建图像、视频或媒体时，请让结果自然、专业，不要明显像人工智能生成。", "始终尊重阿拉伯语从右到左、其他语言从左到右的方向，并保持正确对齐和精美排版。", "插入文件或标志时，请按原样使用，不要扭曲或擅改细节。", "请将用户要求自然体现在最终成果中，不要逐字引用或重复。", "请提供完整成果，不要缩短、删除或总结，即使内容很长，也要继续到完全完成。", "请直接以合适的格式和环境交付结果，不要空洞开场，也不要添加无用结尾。", "对于编程项目，请依靠免费开源资源，并根据领域查找专业平台。", "如果用户提供私钥或项目秘密数据，请放入正确位置；若缺失，请指出应添加的位置。", "请作为所需领域的专业专家行动。", "执行前，请查看优秀相似案例，借鉴但不复制，然后提供更好的结果。", "交付前，请按以上每条要求仔细审查结果，并修正任何错误、冲突或缺漏。", "翻译时，请保留含义、语气和语境，避免逐字翻译，并准确处理专业术语。", "教学时，请把内容组织成清晰渐进路径，包含实践示例、短练习和常见错误提醒。", "写歌曲时，请采用完整结构，包括主歌、副歌和桥段，并让押韵和节奏匹配所需情感。", "学术段落应严谨、系统、语言正确、信息准确，并与用户主题直接相关。", "写作应完全自然、像人写的，不要像人工智能生成，也不要使用不必要的装饰符号。", "不要为了回答而回答；请提供真正服务用户、用户实际需要的内容。"], ruleHi=["चापलूसी नहीं।", "झूठ नहीं।", "भ्रमित उत्तर नहीं।", "बनावटी जानकारी नहीं।", "सभी जानकारी और परिणाम सटीक हों, अपेक्षाएँ पूरी करें और जहाँ संभव हो उनसे आगे जाएँ, दक्ष और त्रुटिरहित हों।", "यदि कोई आवश्यकता अस्पष्ट या अधूरी हो, तो लक्ष्य की सेवा करने वाली सबसे पेशेवर और तार्किक व्याख्या चुनें और आगे बढ़ें।", "हर चीज़ स्पष्ट रूप से लिखें ताकि कृत्रिम बुद्धिमत्ता समझे और आवश्यकताओं को ठीक से पूरा करे।", "दोहराव, सामान्य बात या सतही उत्तर नहीं।", "जब कुछ न पता हो, तो विशेषज्ञ स्रोतों में खोजें, सीखें, फिर उच्च दक्षता से उत्तर दें।", "इस अनुरोध के लिए उपलब्ध सबसे शक्तिशाली मॉडल या मोड उपयोग करें।", "छवि, वीडियो या मीडिया बनाते समय परिणाम प्राकृतिक और पेशेवर हो, स्पष्ट रूप से कृत्रिम न लगे।", "अरबी के लिए दाएँ से बाएँ और अन्य भाषाओं के लिए बाएँ से दाएँ दिशा का पालन करें, सही संरेखण और सुंदर स्वरूप रखें।", "फ़ाइल या लोगो जोड़ते समय उसे वैसा ही रखें, विकृत न करें और सूक्ष्म विवरण न बदलें।", "उपयोगकर्ता की आवश्यकताओं को अंतिम उत्पाद में स्वाभाविक रूप से लागू करें, उन्हें शब्दशः न दोहराएँ।", "पूरा परिणाम दें; छोटा, हटाया या सारांशित न करें, चाहे लंबा हो, पूरा होने तक जारी रखें।", "परिणाम सीधे उसके उचित प्रारूप और वातावरण में दें, खाली भूमिका या अनावश्यक समापन न जोड़ें।", "प्रोग्रामिंग परियोजनाओं में मुक्त और खुले स्रोत संसाधनों पर भरोसा करें और क्षेत्र के अनुसार विशेषज्ञ मंच देखें।", "यदि उपयोगकर्ता निजी कुंजियाँ या परियोजना गुप्त डेटा दे, तो उन्हें सही स्थान पर जोड़ें; यदि न दे, तो बताएँ कहाँ जोड़ना है।", "ठीक उसी क्षेत्र के पेशेवर विशेषज्ञ की तरह कार्य करें।", "काम से पहले समान उत्कृष्ट नमूने देखें, बिना नकल किए प्रेरणा लें, फिर उनसे बेहतर परिणाम दें।", "देने से पहले ऊपर की हर आवश्यकता के सामने परिणाम जाँचें और कोई त्रुटि, टकराव या कमी सुधारें।", "अनुवाद में अर्थ, लहजा और संदर्भ बनाए रखें; शब्दशः अनुवाद न करें और विशेषज्ञ शब्दावली का ध्यान रखें।", "शिक्षण में सामग्री को स्पष्ट क्रमिक मार्ग में व्यवस्थित करें, व्यावहारिक उदाहरण, छोटे अभ्यास और सामान्य गलतियाँ शामिल करें।", "गीत में अंतरे, मुखड़ा और पुल जैसी ठोस संरचना रखें, तथा तुक और लय भाव के अनुरूप हों।", "शैक्षणिक अनुच्छेद गंभीर, पद्धतिगत, भाषाई रूप से सही, सूचनात्मक रूप से सटीक और उपयोगकर्ता के विषय से सीधे जुड़े हों।", "लेखन पूरी तरह मानवीय और प्राकृतिक लगे, कृत्रिम बुद्धिमत्ता जैसा न लगे, और अनावश्यक सजावटी चिह्न न हों।", "सिर्फ उत्तर देने के लिए उत्तर न दें; वह दें जो सच में उपयोगकर्ता की सेवा करे और जिसकी उसे ज़रूरत हो।"];
+  RULES.forEach((r,i)=>{r.en=ruleEn[i]||r.fr||r.ar;r.zh=ruleZh[i]||r.en;r.hi=ruleHi[i]||r.en;});
+  Object.assign(TPL,{"en": {"text": {"role": "You are a professional writer and editor who writes clearly and attractively.", "idea": "I want a well-structured written text about the topic I will specify.", "features": ["Clear structure with headings and sections", "Correct and smooth language", "Examples when useful", "A conclusion that summarizes the idea"], "languages": "English", "audience": "General reader", "tone": ["pro", "simple"], "result": "A polished final text, ready to publish, error-free and clear."}, "academic": {"role": "You are an academic researcher who writes in a rigorous and natural human style.", "idea": "I want an academic research paragraph about the topic I will specify.", "features": ["Rigorous academic style", "Logical connected argument", "Accurate terminology", "Correct language"], "languages": "English", "audience": "Academic reader", "tone": ["formal", "detailed"], "chars": "Example: eight hundred to one thousand characters", "result": "A coherent academic paragraph, accurate, natural, and ready to insert into research."}, "consult": {"role": "You are an expert consultant in the requested field, giving precise analysis and practical solutions.", "idea": "I want specialized consultation about the topic I will provide.", "features": ["Precise analysis", "Multiple options with advantages and risks", "Clear final recommendation", "Practical implementation steps"], "languages": "English", "audience": "Decision maker", "tone": ["pro", "detailed"], "result": "A structured consultation ending with a practical recommendation."}, "code": {"role": "You are an expert software developer who writes clean, efficient, and secure code.", "idea": "I want complete working code for the function I will describe.", "features": ["Clean organized code", "Helpful comments", "Error handling", "Easy extension and maintenance"], "tech": ["Security best practices", "Edge-case testing"], "languages": "According to the project", "audience": "Developers", "tone": ["pro"], "result": "Complete working code with a concise setup and usage explanation."}, "service": {"role": "You are a professional specialist in the exact requested field.", "idea": "I want to create or complete a service or information based on the details I will provide.", "features": ["Precise understanding of the need", "Clear organization", "High-quality details", "Ready-to-use output"], "languages": "English", "audience": "Target audience", "tone": ["pro"], "result": "A complete professional output that answers the need precisely."}, "image": {"role": "You are a professional specialist in the exact requested field.", "idea": "I want to create or complete a image based on the details I will provide.", "features": ["Precise understanding of the need", "Clear organization", "High-quality details", "Ready-to-use output"], "languages": "English", "audience": "Target audience", "tone": ["pro"], "result": "A complete professional output that answers the need precisely."}, "file": {"role": "You are a professional specialist in the exact requested field.", "idea": "I want to create or complete a file or document based on the details I will provide.", "features": ["Precise understanding of the need", "Clear organization", "High-quality details", "Ready-to-use output"], "languages": "English", "audience": "Target audience", "tone": ["pro"], "result": "A complete professional output that answers the need precisely."}, "video": {"role": "You are a professional specialist in the exact requested field.", "idea": "I want to create or complete a video based on the details I will provide.", "features": ["Precise understanding of the need", "Clear organization", "High-quality details", "Ready-to-use output"], "languages": "English", "audience": "Target audience", "tone": ["pro"], "result": "A complete professional output that answers the need precisely."}, "audio": {"role": "You are a professional specialist in the exact requested field.", "idea": "I want to create or complete a audio based on the details I will provide.", "features": ["Precise understanding of the need", "Clear organization", "High-quality details", "Ready-to-use output"], "languages": "English", "audience": "Target audience", "tone": ["pro"], "result": "A complete professional output that answers the need precisely."}, "convert": {"role": "You are a professional specialist in the exact requested field.", "idea": "I want to create or complete a convert one format to another based on the details I will provide.", "features": ["Precise understanding of the need", "Clear organization", "High-quality details", "Ready-to-use output"], "languages": "English", "audience": "Target audience", "tone": ["pro"], "result": "A complete professional output that answers the need precisely."}, "trans": {"role": "You are a professional specialist in the exact requested field.", "idea": "I want to create or complete a professional specialized translation based on the details I will provide.", "features": ["Precise understanding of the need", "Clear organization", "High-quality details", "Ready-to-use output"], "languages": "English", "audience": "Target audience", "tone": ["pro"], "result": "A complete professional output that answers the need precisely."}, "dash": {"role": "You are a professional specialist in the exact requested field.", "idea": "I want to create or complete a dashboard for a specialized site based on the details I will provide.", "features": ["Precise understanding of the need", "Clear organization", "High-quality details", "Ready-to-use output"], "languages": "English", "audience": "Target audience", "tone": ["pro"], "result": "A complete professional output that answers the need precisely."}, "auto": {"role": "You are a professional specialist in the exact requested field.", "idea": "I want to create or complete a workflow automation file based on the details I will provide.", "features": ["Precise understanding of the need", "Clear organization", "High-quality details", "Ready-to-use output"], "languages": "English", "audience": "Target audience", "tone": ["pro"], "result": "A complete professional output that answers the need precisely."}, "fromfile": {"role": "You are a professional specialist in the exact requested field.", "idea": "I want to create or complete a answer from attached files based on the details I will provide.", "features": ["Precise understanding of the need", "Clear organization", "High-quality details", "Ready-to-use output"], "languages": "English", "audience": "Target audience", "tone": ["pro"], "result": "A complete professional output that answers the need precisely."}, "learn": {"role": "You are a professional specialist in the exact requested field.", "idea": "I want to create or complete a learn a new field in one hour based on the details I will provide.", "features": ["Precise understanding of the need", "Clear organization", "High-quality details", "Ready-to-use output"], "languages": "English", "audience": "Target audience", "tone": ["pro"], "result": "A complete professional output that answers the need precisely."}, "song": {"role": "You are a professional specialist in the exact requested field.", "idea": "I want to create or complete a custom song based on the details I will provide.", "features": ["Precise understanding of the need", "Clear organization", "High-quality details", "Ready-to-use output"], "languages": "English", "audience": "Target audience", "tone": ["pro"], "result": "A complete professional output that answers the need precisely."}, "invent": {"role": "You are a professional specialist in the exact requested field.", "idea": "I want to create or complete a invent something based on the details I will provide.", "features": ["Precise understanding of the need", "Clear organization", "High-quality details", "Ready-to-use output"], "languages": "English", "audience": "Target audience", "tone": ["pro"], "result": "A complete professional output that answers the need precisely."}, "other": {"role": "You are a professional specialist in the exact requested field.", "idea": "I want to create or complete a other custom request based on the details I will provide.", "features": ["Precise understanding of the need", "Clear organization", "High-quality details", "Ready-to-use output"], "languages": "English", "audience": "Target audience", "tone": ["pro"], "result": "A complete professional output that answers the need precisely."}}, "zh": {"text": {"role": "你是专业作者和编辑，擅长清晰、有吸引力的表达。", "idea": "我想要一篇关于指定主题的结构化文本。", "features": ["结构清晰", "细节准确", "表达自然", "结果可直接使用"], "languages": "简体中文", "audience": "目标受众", "tone": ["pro", "simple"], "result": "高质量、完整、清晰、可直接使用的最终结果。"}, "academic": {"role": "你是学术研究者，写作严谨且自然。", "idea": "我想要一段关于指定主题的学术研究段落。", "features": ["结构清晰", "细节准确", "表达自然", "结果可直接使用"], "languages": "简体中文", "audience": "目标受众", "tone": ["formal", "detailed"], "result": "高质量、完整、清晰、可直接使用的最终结果。", "chars": "例如：八百到一千字"}, "consult": {"role": "你是专业顾问，提供精准分析和可执行建议。", "idea": "我想要关于指定主题的专业咨询。", "features": ["结构清晰", "细节准确", "表达自然", "结果可直接使用"], "languages": "简体中文", "audience": "目标受众", "tone": ["pro", "simple"], "result": "高质量、完整、清晰、可直接使用的最终结果。"}, "code": {"role": "你是资深软件开发者，能编写清晰、安全、可运行的代码。", "idea": "我想要实现指定功能的完整可运行代码。", "features": ["结构清晰", "细节准确", "表达自然", "结果可直接使用"], "languages": "简体中文", "audience": "目标受众", "tone": ["pro", "simple"], "result": "高质量、完整、清晰、可直接使用的最终结果。"}, "service": {"role": "你是所需领域的专业专家。", "idea": "我想根据将提供的细节完成此类请求。", "features": ["准确理解需求", "结构清晰", "细节高质量", "结果可直接使用"], "languages": "简体中文", "audience": "目标受众", "tone": ["pro"], "result": "完整、专业、准确满足需求的最终结果。"}, "image": {"role": "你是所需领域的专业专家。", "idea": "我想根据将提供的细节完成此类请求。", "features": ["准确理解需求", "结构清晰", "细节高质量", "结果可直接使用"], "languages": "简体中文", "audience": "目标受众", "tone": ["pro"], "result": "完整、专业、准确满足需求的最终结果。"}, "file": {"role": "你是所需领域的专业专家。", "idea": "我想根据将提供的细节完成此类请求。", "features": ["准确理解需求", "结构清晰", "细节高质量", "结果可直接使用"], "languages": "简体中文", "audience": "目标受众", "tone": ["pro"], "result": "完整、专业、准确满足需求的最终结果。"}, "video": {"role": "你是所需领域的专业专家。", "idea": "我想根据将提供的细节完成此类请求。", "features": ["准确理解需求", "结构清晰", "细节高质量", "结果可直接使用"], "languages": "简体中文", "audience": "目标受众", "tone": ["pro"], "result": "完整、专业、准确满足需求的最终结果。"}, "audio": {"role": "你是所需领域的专业专家。", "idea": "我想根据将提供的细节完成此类请求。", "features": ["准确理解需求", "结构清晰", "细节高质量", "结果可直接使用"], "languages": "简体中文", "audience": "目标受众", "tone": ["pro"], "result": "完整、专业、准确满足需求的最终结果。"}, "convert": {"role": "你是所需领域的专业专家。", "idea": "我想根据将提供的细节完成此类请求。", "features": ["准确理解需求", "结构清晰", "细节高质量", "结果可直接使用"], "languages": "简体中文", "audience": "目标受众", "tone": ["pro"], "result": "完整、专业、准确满足需求的最终结果。"}, "trans": {"role": "你是所需领域的专业专家。", "idea": "我想根据将提供的细节完成此类请求。", "features": ["准确理解需求", "结构清晰", "细节高质量", "结果可直接使用"], "languages": "简体中文", "audience": "目标受众", "tone": ["pro"], "result": "完整、专业、准确满足需求的最终结果。"}, "dash": {"role": "你是所需领域的专业专家。", "idea": "我想根据将提供的细节完成此类请求。", "features": ["准确理解需求", "结构清晰", "细节高质量", "结果可直接使用"], "languages": "简体中文", "audience": "目标受众", "tone": ["pro"], "result": "完整、专业、准确满足需求的最终结果。"}, "auto": {"role": "你是所需领域的专业专家。", "idea": "我想根据将提供的细节完成此类请求。", "features": ["准确理解需求", "结构清晰", "细节高质量", "结果可直接使用"], "languages": "简体中文", "audience": "目标受众", "tone": ["pro"], "result": "完整、专业、准确满足需求的最终结果。"}, "fromfile": {"role": "你是所需领域的专业专家。", "idea": "我想根据将提供的细节完成此类请求。", "features": ["准确理解需求", "结构清晰", "细节高质量", "结果可直接使用"], "languages": "简体中文", "audience": "目标受众", "tone": ["pro"], "result": "完整、专业、准确满足需求的最终结果。"}, "learn": {"role": "你是所需领域的专业专家。", "idea": "我想根据将提供的细节完成此类请求。", "features": ["准确理解需求", "结构清晰", "细节高质量", "结果可直接使用"], "languages": "简体中文", "audience": "目标受众", "tone": ["pro"], "result": "完整、专业、准确满足需求的最终结果。"}, "song": {"role": "你是所需领域的专业专家。", "idea": "我想根据将提供的细节完成此类请求。", "features": ["准确理解需求", "结构清晰", "细节高质量", "结果可直接使用"], "languages": "简体中文", "audience": "目标受众", "tone": ["pro"], "result": "完整、专业、准确满足需求的最终结果。"}, "invent": {"role": "你是所需领域的专业专家。", "idea": "我想根据将提供的细节完成此类请求。", "features": ["准确理解需求", "结构清晰", "细节高质量", "结果可直接使用"], "languages": "简体中文", "audience": "目标受众", "tone": ["pro"], "result": "完整、专业、准确满足需求的最终结果。"}, "other": {"role": "你是所需领域的专业专家。", "idea": "我想根据将提供的细节完成此类请求。", "features": ["准确理解需求", "结构清晰", "细节高质量", "结果可直接使用"], "languages": "简体中文", "audience": "目标受众", "tone": ["pro"], "result": "完整、专业、准确满足需求的最终结果。"}}, "hi": {"text": {"role": "आप पेशेवर लेखक और संपादक हैं जो साफ़ और आकर्षक भाषा लिखते हैं।", "idea": "मैं निर्दिष्ट विषय पर सुव्यवस्थित पाठ चाहता हूँ।", "features": ["स्पष्ट संरचना", "सटीक विवरण", "स्वाभाविक भाषा", "सीधे उपयोग योग्य परिणाम"], "languages": "हिन्दी", "audience": "लक्षित दर्शक", "tone": ["pro", "simple"], "result": "उच्च गुणवत्ता वाला, पूरा, स्पष्ट और सीधे उपयोग योग्य अंतिम परिणाम।"}, "academic": {"role": "आप शैक्षणिक शोधकर्ता हैं जो गंभीर और स्वाभाविक शैली में लिखते हैं।", "idea": "मैं निर्दिष्ट विषय पर शैक्षणिक शोध अनुच्छेद चाहता हूँ।", "features": ["स्पष्ट संरचना", "सटीक विवरण", "स्वाभाविक भाषा", "सीधे उपयोग योग्य परिणाम"], "languages": "हिन्दी", "audience": "लक्षित दर्शक", "tone": ["formal", "detailed"], "result": "उच्च गुणवत्ता वाला, पूरा, स्पष्ट और सीधे उपयोग योग्य अंतिम परिणाम।", "chars": "उदाहरण: आठ सौ से एक हजार वर्ण"}, "consult": {"role": "आप विशेषज्ञ सलाहकार हैं जो सटीक विश्लेषण और लागू सलाह देते हैं।", "idea": "मैं निर्दिष्ट विषय पर विशेषज्ञ परामर्श चाहता हूँ।", "features": ["स्पष्ट संरचना", "सटीक विवरण", "स्वाभाविक भाषा", "सीधे उपयोग योग्य परिणाम"], "languages": "हिन्दी", "audience": "लक्षित दर्शक", "tone": ["pro", "simple"], "result": "उच्च गुणवत्ता वाला, पूरा, स्पष्ट और सीधे उपयोग योग्य अंतिम परिणाम।"}, "code": {"role": "आप वरिष्ठ सॉफ़्टवेयर डेवलपर हैं जो साफ़, सुरक्षित और चलने योग्य कोड लिखते हैं।", "idea": "मैं निर्दिष्ट कार्य के लिए पूरा चलने योग्य कोड चाहता हूँ।", "features": ["स्पष्ट संरचना", "सटीक विवरण", "स्वाभाविक भाषा", "सीधे उपयोग योग्य परिणाम"], "languages": "हिन्दी", "audience": "लक्षित दर्शक", "tone": ["pro", "simple"], "result": "उच्च गुणवत्ता वाला, पूरा, स्पष्ट और सीधे उपयोग योग्य अंतिम परिणाम।"}, "service": {"role": "आप ठीक माँगे गए क्षेत्र के पेशेवर विशेषज्ञ हैं।", "idea": "मैं दिए जाने वाले विवरणों के आधार पर यह अनुरोध पूरा करना चाहता हूँ।", "features": ["ज़रूरत की सटीक समझ", "स्पष्ट संगठन", "उच्च गुणवत्ता विवरण", "सीधे उपयोग योग्य परिणाम"], "languages": "हिन्दी", "audience": "लक्षित दर्शक", "tone": ["pro"], "result": "ज़रूरत को सटीक रूप से पूरा करने वाला पूरा पेशेवर परिणाम।"}, "image": {"role": "आप ठीक माँगे गए क्षेत्र के पेशेवर विशेषज्ञ हैं।", "idea": "मैं दिए जाने वाले विवरणों के आधार पर यह अनुरोध पूरा करना चाहता हूँ।", "features": ["ज़रूरत की सटीक समझ", "स्पष्ट संगठन", "उच्च गुणवत्ता विवरण", "सीधे उपयोग योग्य परिणाम"], "languages": "हिन्दी", "audience": "लक्षित दर्शक", "tone": ["pro"], "result": "ज़रूरत को सटीक रूप से पूरा करने वाला पूरा पेशेवर परिणाम।"}, "file": {"role": "आप ठीक माँगे गए क्षेत्र के पेशेवर विशेषज्ञ हैं।", "idea": "मैं दिए जाने वाले विवरणों के आधार पर यह अनुरोध पूरा करना चाहता हूँ।", "features": ["ज़रूरत की सटीक समझ", "स्पष्ट संगठन", "उच्च गुणवत्ता विवरण", "सीधे उपयोग योग्य परिणाम"], "languages": "हिन्दी", "audience": "लक्षित दर्शक", "tone": ["pro"], "result": "ज़रूरत को सटीक रूप से पूरा करने वाला पूरा पेशेवर परिणाम।"}, "video": {"role": "आप ठीक माँगे गए क्षेत्र के पेशेवर विशेषज्ञ हैं।", "idea": "मैं दिए जाने वाले विवरणों के आधार पर यह अनुरोध पूरा करना चाहता हूँ।", "features": ["ज़रूरत की सटीक समझ", "स्पष्ट संगठन", "उच्च गुणवत्ता विवरण", "सीधे उपयोग योग्य परिणाम"], "languages": "हिन्दी", "audience": "लक्षित दर्शक", "tone": ["pro"], "result": "ज़रूरत को सटीक रूप से पूरा करने वाला पूरा पेशेवर परिणाम।"}, "audio": {"role": "आप ठीक माँगे गए क्षेत्र के पेशेवर विशेषज्ञ हैं।", "idea": "मैं दिए जाने वाले विवरणों के आधार पर यह अनुरोध पूरा करना चाहता हूँ।", "features": ["ज़रूरत की सटीक समझ", "स्पष्ट संगठन", "उच्च गुणवत्ता विवरण", "सीधे उपयोग योग्य परिणाम"], "languages": "हिन्दी", "audience": "लक्षित दर्शक", "tone": ["pro"], "result": "ज़रूरत को सटीक रूप से पूरा करने वाला पूरा पेशेवर परिणाम।"}, "convert": {"role": "आप ठीक माँगे गए क्षेत्र के पेशेवर विशेषज्ञ हैं।", "idea": "मैं दिए जाने वाले विवरणों के आधार पर यह अनुरोध पूरा करना चाहता हूँ।", "features": ["ज़रूरत की सटीक समझ", "स्पष्ट संगठन", "उच्च गुणवत्ता विवरण", "सीधे उपयोग योग्य परिणाम"], "languages": "हिन्दी", "audience": "लक्षित दर्शक", "tone": ["pro"], "result": "ज़रूरत को सटीक रूप से पूरा करने वाला पूरा पेशेवर परिणाम।"}, "trans": {"role": "आप ठीक माँगे गए क्षेत्र के पेशेवर विशेषज्ञ हैं।", "idea": "मैं दिए जाने वाले विवरणों के आधार पर यह अनुरोध पूरा करना चाहता हूँ।", "features": ["ज़रूरत की सटीक समझ", "स्पष्ट संगठन", "उच्च गुणवत्ता विवरण", "सीधे उपयोग योग्य परिणाम"], "languages": "हिन्दी", "audience": "लक्षित दर्शक", "tone": ["pro"], "result": "ज़रूरत को सटीक रूप से पूरा करने वाला पूरा पेशेवर परिणाम।"}, "dash": {"role": "आप ठीक माँगे गए क्षेत्र के पेशेवर विशेषज्ञ हैं।", "idea": "मैं दिए जाने वाले विवरणों के आधार पर यह अनुरोध पूरा करना चाहता हूँ।", "features": ["ज़रूरत की सटीक समझ", "स्पष्ट संगठन", "उच्च गुणवत्ता विवरण", "सीधे उपयोग योग्य परिणाम"], "languages": "हिन्दी", "audience": "लक्षित दर्शक", "tone": ["pro"], "result": "ज़रूरत को सटीक रूप से पूरा करने वाला पूरा पेशेवर परिणाम।"}, "auto": {"role": "आप ठीक माँगे गए क्षेत्र के पेशेवर विशेषज्ञ हैं।", "idea": "मैं दिए जाने वाले विवरणों के आधार पर यह अनुरोध पूरा करना चाहता हूँ।", "features": ["ज़रूरत की सटीक समझ", "स्पष्ट संगठन", "उच्च गुणवत्ता विवरण", "सीधे उपयोग योग्य परिणाम"], "languages": "हिन्दी", "audience": "लक्षित दर्शक", "tone": ["pro"], "result": "ज़रूरत को सटीक रूप से पूरा करने वाला पूरा पेशेवर परिणाम।"}, "fromfile": {"role": "आप ठीक माँगे गए क्षेत्र के पेशेवर विशेषज्ञ हैं।", "idea": "मैं दिए जाने वाले विवरणों के आधार पर यह अनुरोध पूरा करना चाहता हूँ।", "features": ["ज़रूरत की सटीक समझ", "स्पष्ट संगठन", "उच्च गुणवत्ता विवरण", "सीधे उपयोग योग्य परिणाम"], "languages": "हिन्दी", "audience": "लक्षित दर्शक", "tone": ["pro"], "result": "ज़रूरत को सटीक रूप से पूरा करने वाला पूरा पेशेवर परिणाम।"}, "learn": {"role": "आप ठीक माँगे गए क्षेत्र के पेशेवर विशेषज्ञ हैं।", "idea": "मैं दिए जाने वाले विवरणों के आधार पर यह अनुरोध पूरा करना चाहता हूँ।", "features": ["ज़रूरत की सटीक समझ", "स्पष्ट संगठन", "उच्च गुणवत्ता विवरण", "सीधे उपयोग योग्य परिणाम"], "languages": "हिन्दी", "audience": "लक्षित दर्शक", "tone": ["pro"], "result": "ज़रूरत को सटीक रूप से पूरा करने वाला पूरा पेशेवर परिणाम।"}, "song": {"role": "आप ठीक माँगे गए क्षेत्र के पेशेवर विशेषज्ञ हैं।", "idea": "मैं दिए जाने वाले विवरणों के आधार पर यह अनुरोध पूरा करना चाहता हूँ।", "features": ["ज़रूरत की सटीक समझ", "स्पष्ट संगठन", "उच्च गुणवत्ता विवरण", "सीधे उपयोग योग्य परिणाम"], "languages": "हिन्दी", "audience": "लक्षित दर्शक", "tone": ["pro"], "result": "ज़रूरत को सटीक रूप से पूरा करने वाला पूरा पेशेवर परिणाम।"}, "invent": {"role": "आप ठीक माँगे गए क्षेत्र के पेशेवर विशेषज्ञ हैं।", "idea": "मैं दिए जाने वाले विवरणों के आधार पर यह अनुरोध पूरा करना चाहता हूँ।", "features": ["ज़रूरत की सटीक समझ", "स्पष्ट संगठन", "उच्च गुणवत्ता विवरण", "सीधे उपयोग योग्य परिणाम"], "languages": "हिन्दी", "audience": "लक्षित दर्शक", "tone": ["pro"], "result": "ज़रूरत को सटीक रूप से पूरा करने वाला पूरा पेशेवर परिणाम।"}, "other": {"role": "आप ठीक माँगे गए क्षेत्र के पेशेवर विशेषज्ञ हैं।", "idea": "मैं दिए जाने वाले विवरणों के आधार पर यह अनुरोध पूरा करना चाहता हूँ।", "features": ["ज़रूरत की सटीक समझ", "स्पष्ट संगठन", "उच्च गुणवत्ता विवरण", "सीधे उपयोग योग्य परिणाम"], "languages": "हिन्दी", "audience": "लक्षित दर्शक", "tone": ["pro"], "result": "ज़रूरत को सटीक रूप से पूरा करने वाला पूरा पेशेवर परिणाम।"}}});
+}
+upgradeLanguages();
+function tplScalar(types,L,key){for(const id of types){const t=L[id];if(t&&t[key]!=null&&t[key]!=="")return t[key];}return "";}
+function tplList(types,L,key,cap){const out=[];for(const id of types){const t=L[id];if(t&&Array.isArray(t[key]))t[key].forEach(v=>{if(!out.includes(v))out.push(v);});}return out.slice(0,cap||6);}
+function setInput(id,v){const e=document.getElementById("f_"+id);if(e)e.value=v||"";}
+function setListField(id,arr){const box=document.getElementById("list_"+id);if(!box)return;box.querySelectorAll(".item").forEach(n=>n.remove());const f=FIELDS.find(x=>x.id===id);(arr&&arr.length?arr:[""]).forEach(v=>{const i=addItem(box,f);i.value=v;});}
+function setChipsField(id,ids){const tw=document.querySelector('[data-chips="'+id+'"]');if(!tw)return;tw.querySelectorAll(".pill").forEach(b=>b.setAttribute("aria-pressed",(ids||[]).includes(b.getAttribute("data-id"))?"true":"false"));}
+function setYesNo(id,v){const s=document.querySelector('[data-yesno="'+id+'"]');if(!s||!v)return;s.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",b.getAttribute("data-v")===v?"true":"false"));}
+function smartFill(){
+  const types=[...selected];
+  if(!types.length){toast(strKey("tPickType"));goStep(1);return false;}
+  const L=TPL[lang]||{};
+  const selectedLanguageName={en:"English",ar:"العربية",fr:"Français",zh:"简体中文",hi:"हिन्दी"}[lang]||"English";
+
+  /* Always refresh generated fields in the selected language.
+     This prevents Arabic, English, or any previous language from staying after Smart Fill. */
+  setInput("idea",tplScalar(types,L,"idea"));
+  setInput("title",tplScalar(types,L,"title"));
+  setInput("role",tplScalar(types,L,"role"));
+  setInput("colors",tplScalar(types,L,"colors"));
+  setInput("fonts",tplScalar(types,L,"fonts"));
+  setInput("sizes",tplScalar(types,L,"sizes"));
+  setInput("languages",tplScalar(types,L,"languages") || selectedLanguageName);
+  setInput("audience",tplScalar(types,L,"audience"));
+  setInput("count",tplScalar(types,L,"count"));
+  setInput("chars",tplScalar(types,L,"chars"));
+  setInput("result",tplScalar(types,L,"result"));
+
+  setListField("features",tplList(types,L,"features",6));
+  setListField("warnings",tplList(types,L,"warnings",3));
+  setListField("tech",tplList(types,L,"tech",4));
+  setChipsField("tone",tplList(types,L,"tone",4));
+  setYesNo("attachments",tplScalar(types,L,"attachments"));
+
+  setMoreOpen(true);touch();toast(strKey("tFillOk"));return true;
+}
+function smartFillNext(){if(smartFill())goStep(2);}
+
+/* ===================== RESET / CLEAR MEMORY ===================== */
+function resetAll(){
+  if(!window.confirm(strKey("resetConfirm")))return;
+  store.del("lp_draft");
+  selected.clear();
+  renderChoices();renderForm();setMoreOpen(false);
+  const out=document.getElementById("output");if(out)out.value="";
+  updateMeters();syncPreview();
+  goStep(1);toast(strKey("tReset"));
+}
+
+/* ===================== AUTOSAVE ===================== */
+let saveT=null;
+function scheduleSave(){if(!store.ok)return;clearTimeout(saveT);saveT=setTimeout(saveDraft,450);}
+function saveDraft(){
+  if(!store.ok)return;
+  const d={c:[...selected],v:{},l:{},t:chipVals("tone"),y:{attachments:yn("attachments")}};
+  FIELDS.forEach(f=>{if(f.type==="text"||f.type==="textarea")d.v[f.id]=val(f.id);else if(f.type==="group")f.children.forEach(c=>d.v[c.id]=val(c.id));else if(f.type==="list")d.l[f.id]=listVals(f.id);});
+  store.set("lp_draft",JSON.stringify(d));
+}
+function restoreDraft(){
+  let raw=store.get("lp_draft");if(!raw)return;let d;try{d=JSON.parse(raw);}catch(e){return;}
+  (d.c||[]).forEach(id=>{selected.add(id);const b=document.querySelector('.chip[data-id="'+id+'"]');if(b)b.setAttribute("aria-pressed","true");});
+  if(d.v)for(const k in d.v){const e=document.getElementById("f_"+k);if(e&&d.v[k])e.value=d.v[k];}
+  if(d.l)for(const k in d.l){const arr=d.l[k]||[];const box=document.getElementById("list_"+k);if(box&&arr.length){box.querySelectorAll(".item").forEach(n=>n.remove());const f=FIELDS.find(x=>x.id===k);arr.forEach(v=>{const i=addItem(box,f);i.value=v;});}}
+  (d.t||[]).forEach(id=>{const b=document.querySelector('[data-chips="tone"] [data-id="'+id+'"]');if(b)b.setAttribute("aria-pressed","true");});
+  if(d.y&&d.y.attachments){const b=document.querySelector('[data-yesno="attachments"] [data-v="'+d.y.attachments+'"]');if(b)b.setAttribute("aria-pressed","true");}
+}
+
+/* ===================== FX ===================== */
+const REDUCE=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+function burst(node){
+  if(REDUCE)return;const r=node.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;const cols=["#22d3ee","#8b5cf6","#f472b6","#fbbf24","#2dd4bf","#fff"];
+  for(let i=0;i<12;i++){const s=document.createElement("span");s.className="spark";s.style.cssText="left:"+cx+"px;top:"+cy+"px;background:"+cols[i%cols.length]+";position:fixed;z-index:95";document.body.appendChild(s);const ang=(Math.PI*2*i)/12+Math.random()*.5,d=32+Math.random()*40;s.animate([{transform:"translate(0,0) scale(1)",opacity:1},{transform:"translate("+Math.cos(ang)*d+"px,"+Math.sin(ang)*d+"px) scale(0)",opacity:0}],{duration:620+Math.random()*260,easing:"cubic-bezier(.2,.8,.3,1)"}).onfinish=()=>s.remove();}
+}
+function buildAurora(){const a=document.getElementById("aurora");const cfg=[["#22d3ee","12%","6%","360px"],["#8b5cf6","74%","10%","340px"],["#f472b6","58%","74%","380px"],["#2dd4bf","18%","68%","300px"]];cfg.forEach((c,i)=>{const d=el("div","aurora");d.style.background="radial-gradient(circle,"+c[0]+",transparent 70%)";d.style.insetInlineStart=c[1];d.style.top=c[2];d.style.width=c[3];d.style.height=c[3];d.style.animationDelay=(i*2.6)+"s";a.appendChild(d);});}
+function buildDust(){if(REDUCE)return;const p=document.getElementById("dust");for(let i=0;i<26;i++){const d=el("div","dust");d.style.insetInlineStart=(Math.random()*100)+"%";d.style.bottom="-2%";const dur=10+Math.random()*12;d.style.animationDuration=dur+"s";d.style.animationDelay="-"+(Math.random()*dur)+"s";const sz=2+Math.random()*2.5;d.style.width=sz+"px";d.style.height=sz+"px";d.style.opacity=String(.3+Math.random()*.5);p.appendChild(d);}}
+function initTilt(){
+  if(REDUCE||window.matchMedia("(pointer:coarse)").matches)return;
+  const stage=document.querySelector(".stage");
+  const wide=()=>window.innerWidth>=980&&!window.matchMedia("(pointer:coarse)").matches;
+  window.addEventListener("mousemove",e=>{if(!wide()){stage.style.transform="";return;}const cx=window.innerWidth/2,cy=window.innerHeight/2;stage.style.transform="perspective(1400px) rotateX("+(((e.clientY-cy)/cy)*-1.4).toFixed(2)+"deg) rotateY("+(((e.clientX-cx)/cx)*1.4).toFixed(2)+"deg)";});
+  window.addEventListener("resize",()=>{if(!wide())stage.style.transform="";});
+}
+function toast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),2400);}
+
+/* ===================== INIT ===================== */
+renderChoices();
+renderForm();
+restoreDraft();
+if(moreHasContent())setMoreOpen(true);
+document.getElementById("creedText").textContent=STR[lang].intro;
+buildAurora();buildDust();initTilt();
+/* restore prefs */
+(function(){const th=store.get("lp_theme");if(th==="light"){document.body.classList.add("theme-light");document.body.classList.remove("theme-dark");}applyThemeIcon();const lg=store.get("lp_lang_v2");setLang(SUPPORTED_LANGS.includes(lg)?lg:"en");})();
+document.getElementById("step2").addEventListener("input",touch);
+</script>
+</body>
+</html>
